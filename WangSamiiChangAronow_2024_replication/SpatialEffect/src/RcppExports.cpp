@@ -12,17 +12,52 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // ConleySE
-Rcpp::List ConleySE(arma::colvec res, arma::mat W_meat, arma::mat dist, double cutoff, int kernel);
-RcppExport SEXP _SpatialEffect_ConleySE(SEXP resSEXP, SEXP W_meatSEXP, SEXP distSEXP, SEXP cutoffSEXP, SEXP kernelSEXP) {
+Rcpp::List ConleySE(arma::colvec res, arma::mat W_meat, arma::mat dist, arma::mat XXinv, double cutoff, int kernel, int trim, int if_edof);
+RcppExport SEXP _SpatialEffect_ConleySE(SEXP resSEXP, SEXP W_meatSEXP, SEXP distSEXP, SEXP XXinvSEXP, SEXP cutoffSEXP, SEXP kernelSEXP, SEXP trimSEXP, SEXP if_edofSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::colvec >::type res(resSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type W_meat(W_meatSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type dist(distSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type XXinv(XXinvSEXP);
     Rcpp::traits::input_parameter< double >::type cutoff(cutoffSEXP);
     Rcpp::traits::input_parameter< int >::type kernel(kernelSEXP);
-    rcpp_result_gen = Rcpp::wrap(ConleySE(res, W_meat, dist, cutoff, kernel));
+    Rcpp::traits::input_parameter< int >::type trim(trimSEXP);
+    Rcpp::traits::input_parameter< int >::type if_edof(if_edofSEXP);
+    rcpp_result_gen = Rcpp::wrap(ConleySE(res, W_meat, dist, XXinv, cutoff, kernel, trim, if_edof));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ConleySE2
+Rcpp::List ConleySE2(arma::colvec res, arma::mat W_meat, arma::mat dist_kernel, arma::mat XXinv, int kernel, int trim, int if_edof);
+RcppExport SEXP _SpatialEffect_ConleySE2(SEXP resSEXP, SEXP W_meatSEXP, SEXP dist_kernelSEXP, SEXP XXinvSEXP, SEXP kernelSEXP, SEXP trimSEXP, SEXP if_edofSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::colvec >::type res(resSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type W_meat(W_meatSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type dist_kernel(dist_kernelSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type XXinv(XXinvSEXP);
+    Rcpp::traits::input_parameter< int >::type kernel(kernelSEXP);
+    Rcpp::traits::input_parameter< int >::type trim(trimSEXP);
+    Rcpp::traits::input_parameter< int >::type if_edof(if_edofSEXP);
+    rcpp_result_gen = Rcpp::wrap(ConleySE2(res, W_meat, dist_kernel, XXinv, kernel, trim, if_edof));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ConleySE_kernel
+Rcpp::List ConleySE_kernel(arma::mat dist, int N, double cutoff, int kernel, int trim);
+RcppExport SEXP _SpatialEffect_ConleySE_kernel(SEXP distSEXP, SEXP NSEXP, SEXP cutoffSEXP, SEXP kernelSEXP, SEXP trimSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type dist(distSEXP);
+    Rcpp::traits::input_parameter< int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< double >::type cutoff(cutoffSEXP);
+    Rcpp::traits::input_parameter< int >::type kernel(kernelSEXP);
+    Rcpp::traits::input_parameter< int >::type trim(trimSEXP);
+    rcpp_result_gen = Rcpp::wrap(ConleySE_kernel(dist, N, cutoff, kernel, trim));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -39,10 +74,95 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// DistanceCalculation2
+Rcpp::List DistanceCalculation2(arma::colvec x_coord, arma::colvec y_coord, arma::colvec x_coord2, arma::colvec y_coord2, int metric);
+RcppExport SEXP _SpatialEffect_DistanceCalculation2(SEXP x_coordSEXP, SEXP y_coordSEXP, SEXP x_coord2SEXP, SEXP y_coord2SEXP, SEXP metricSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::colvec >::type x_coord(x_coordSEXP);
+    Rcpp::traits::input_parameter< arma::colvec >::type y_coord(y_coordSEXP);
+    Rcpp::traits::input_parameter< arma::colvec >::type x_coord2(x_coord2SEXP);
+    Rcpp::traits::input_parameter< arma::colvec >::type y_coord2(y_coord2SEXP);
+    Rcpp::traits::input_parameter< int >::type metric(metricSEXP);
+    rcpp_result_gen = Rcpp::wrap(DistanceCalculation2(x_coord, y_coord, x_coord2, y_coord2, metric));
+    return rcpp_result_gen;
+END_RCPP
+}
+// calculate_tau
+Rcpp::List calculate_tau(arma::mat Y, arma::mat Zdata);
+RcppExport SEXP _SpatialEffect_calculate_tau(SEXP YSEXP, SEXP ZdataSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type Y(YSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Zdata(ZdataSEXP);
+    rcpp_result_gen = Rcpp::wrap(calculate_tau(Y, Zdata));
+    return rcpp_result_gen;
+END_RCPP
+}
+// effect_interactive
+Rcpp::List effect_interactive(arma::vec Y0, NumericMatrix dist, arma::mat Zdata, arma::ivec Zneighbor, arma::vec alpha, double effect, double sh, double sc, double a);
+RcppExport SEXP _SpatialEffect_effect_interactive(SEXP Y0SEXP, SEXP distSEXP, SEXP ZdataSEXP, SEXP ZneighborSEXP, SEXP alphaSEXP, SEXP effectSEXP, SEXP shSEXP, SEXP scSEXP, SEXP aSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type Y0(Y0SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type dist(distSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Zdata(ZdataSEXP);
+    Rcpp::traits::input_parameter< arma::ivec >::type Zneighbor(ZneighborSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< double >::type effect(effectSEXP);
+    Rcpp::traits::input_parameter< double >::type sh(shSEXP);
+    Rcpp::traits::input_parameter< double >::type sc(scSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    rcpp_result_gen = Rcpp::wrap(effect_interactive(Y0, dist, Zdata, Zneighbor, alpha, effect, sh, sc, a));
+    return rcpp_result_gen;
+END_RCPP
+}
+// nonmonoeffect_c
+NumericVector nonmonoeffect_c(NumericVector d, double sh, double sc, double a);
+RcppExport SEXP _SpatialEffect_nonmonoeffect_c(SEXP dSEXP, SEXP shSEXP, SEXP scSEXP, SEXP aSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type d(dSEXP);
+    Rcpp::traits::input_parameter< double >::type sh(shSEXP);
+    Rcpp::traits::input_parameter< double >::type sc(scSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    rcpp_result_gen = Rcpp::wrap(nonmonoeffect_c(d, sh, sc, a));
+    return rcpp_result_gen;
+END_RCPP
+}
+// effect_nonmo1
+Rcpp::List effect_nonmo1(arma::colvec Y0, NumericMatrix dist, arma::mat Zdata, arma::colvec alpha, double effect, double sh, double sc, double a);
+RcppExport SEXP _SpatialEffect_effect_nonmo1(SEXP Y0SEXP, SEXP distSEXP, SEXP ZdataSEXP, SEXP alphaSEXP, SEXP effectSEXP, SEXP shSEXP, SEXP scSEXP, SEXP aSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::colvec >::type Y0(Y0SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type dist(distSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Zdata(ZdataSEXP);
+    Rcpp::traits::input_parameter< arma::colvec >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< double >::type effect(effectSEXP);
+    Rcpp::traits::input_parameter< double >::type sh(shSEXP);
+    Rcpp::traits::input_parameter< double >::type sc(scSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    rcpp_result_gen = Rcpp::wrap(effect_nonmo1(Y0, dist, Zdata, alpha, effect, sh, sc, a));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_SpatialEffect_ConleySE", (DL_FUNC) &_SpatialEffect_ConleySE, 5},
+    {"_SpatialEffect_ConleySE", (DL_FUNC) &_SpatialEffect_ConleySE, 8},
+    {"_SpatialEffect_ConleySE2", (DL_FUNC) &_SpatialEffect_ConleySE2, 7},
+    {"_SpatialEffect_ConleySE_kernel", (DL_FUNC) &_SpatialEffect_ConleySE_kernel, 5},
     {"_SpatialEffect_DistanceCalculation", (DL_FUNC) &_SpatialEffect_DistanceCalculation, 3},
+    {"_SpatialEffect_DistanceCalculation2", (DL_FUNC) &_SpatialEffect_DistanceCalculation2, 5},
+    {"_SpatialEffect_calculate_tau", (DL_FUNC) &_SpatialEffect_calculate_tau, 2},
+    {"_SpatialEffect_effect_interactive", (DL_FUNC) &_SpatialEffect_effect_interactive, 9},
+    {"_SpatialEffect_nonmonoeffect_c", (DL_FUNC) &_SpatialEffect_nonmonoeffect_c, 4},
+    {"_SpatialEffect_effect_nonmo1", (DL_FUNC) &_SpatialEffect_effect_nonmo1, 8},
     {NULL, NULL, 0}
 };
 

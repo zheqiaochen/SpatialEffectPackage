@@ -3,14 +3,15 @@
 
 using namespace Rcpp;
 
-// [[Rcpp::export()]]
-void ConleySE(arma::colvec res, arma::mat W_meat, arma::mat dist, arma::mat XXinv, double cutoff, int kernel, int trim,int if_edof){
+// Debug-only implementation; intentionally not exported to R.
+void ConleySE_debug(arma::colvec res, arma::mat W_meat, arma::mat dist, arma::mat XXinv, double cutoff, int kernel, int trim,int if_edof){
 
   // Define variables
   int N = res.size();
   double u = 0;
-  double mu=1;
-  double v=2;
+
+  // double mu=1;
+  // double v=2;
   arma::mat B = arma::zeros(N, N);
   // arma::mat bread = inv(W_meat.t() * W_meat);
   arma::mat meat = arma::zeros(W_meat.n_cols, W_meat.n_cols);
@@ -26,8 +27,7 @@ void ConleySE(arma::colvec res, arma::mat W_meat, arma::mat dist, arma::mat XXin
   w(0)=0;
   w(1)=1;
   //Residual Maker Matrix
-  M_mat = Identity_matrix - W_meat * XXinv * W_meat.t();
-  z_vec = W_meat * XXinv * w;
+  M_mat = Identity_matrix;
 
   //Calculate Kernel Matrix
   for (int i = 0; i < N; i++){

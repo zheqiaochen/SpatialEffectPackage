@@ -8,9 +8,10 @@ library(plotrix)
 library(foreign)
 library(sp)
 library(fields)
-library(ri)
+library(ri2)
 library(sf)
 library(raster)
+library(SpatialEffect)
 
 set.seed(2024)
 
@@ -235,7 +236,7 @@ dev.off()
 
 
 # analysis
-result.list <- SpatialEffect(ras = ras, Zdata = Zdata, x_coord_Z = x_coord_Z, y_coord_Z = y_coord_Z, ras_Z = NULL, 
+result.list <- SpatialEffect(ras = ras, Zdata = Zdata, x_coord_Z = x_coord_Z, y_coord_Z = y_coord_Z, ras_Z = ras_Z, 
                              treatment = treatment, dVec = dVec[-1], numpts = 10000, only.unique = only.unique, smooth = smooth, 
                              per.se = per.se, conley.se = conley.se, cutoff = cutoff, alpha = alpha, edf = edf,
                              nPerms = nPerms, smooth.conley.se = smooth.conley.se, dist.metric = dist.metric, cType = "edge", kernel = kernel)

@@ -6,44 +6,16 @@
 
 using namespace Rcpp;
 using namespace std;
-// [[Rcpp::export()]]
 
-NumericVector nonmonoeffect_c(NumericVector d, double sh, double sc, double a){
-
-    
-    NumericVector weights(d.size(),1);
-
-    for (int i = 0; i < d.size();i++) {
-          
-          if (d(i) > 6) {
-            weights(i) = 0;
-          }
-    }
-
-    NumericVector output = (Rcpp::dgamma(d, sh, 2*sc,0) - a*Rcpp::dgamma(d, 5*sh, sc,0))*((-1)*d*d/36+1);
-
-    return ( output*weights);
-
-    
-}
+// Reuse the nonmonoeffect_c function from effect_nonmo.cpp
+NumericVector nonmonoeffect_c(NumericVector d, double sh, double sc, double a);
 
 
 //If nearest neighbor is treated, add an additinoal effect function
 NumericVector effect2(NumericVector d, double sh, double sc, double a){
 
-    NumericVector weights(d.size(),1);
+  return ( Rcpp::dgamma(d, 5*sh, sc,0))*((-1)*d*d/36+1);
 
-    for (int i = 0; i < d.size(); i++) {
-          
-          if (d(i) > 6) {
-            weights(i) = 0;
-          }
-    }
-    NumericVector output = ( Rcpp::dgamma(d, 5*sh, sc,0))* ((-1)*d*d/36+1);
-  //return ( Rcpp::dgamma(d, 5*sh, sc,0))*((-1)*d*d/36+1);
-  return (output*weights);
-   // NumericVector weights2(d.size(),0); 
-   //return(weights2);
 }
 
 
@@ -100,7 +72,7 @@ Rcpp::List effect_interactive(arma::vec Y0, NumericMatrix dist, arma::mat Zdata,
 
         for (int j=0; j<Nsim; j++){
 
-            output(i,j) =Y0(i) + alpha(i) * effect*output(i,j);
+            output(i,j) =Y0(i) + alpha(i) *effect*output(i,j);
            
         }
     }

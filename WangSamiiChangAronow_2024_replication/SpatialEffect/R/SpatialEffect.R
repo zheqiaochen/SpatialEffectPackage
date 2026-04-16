@@ -16,7 +16,7 @@ SpatialEffect <- function(ras = NULL, Ydata = NULL, outcome = NULL, x_coord_Y = 
   # check the type of intervention
   if (is.null(ras_Z)){
     cat("Point intervention", "\n")
-    if (is.null(x_coord_Z) | is.null(x_coord_Z)){
+    if (is.null(x_coord_Z) | is.null(y_coord_Z)){
       stop("Coordinates of intervention nodes are not detected")
     }
   }else if (!is.null(ras_Z)){
@@ -51,7 +51,7 @@ SpatialEffect <- function(ras = NULL, Ydata = NULL, outcome = NULL, x_coord_Y = 
   if (is.null(prob_treatment)){
     pweight <- rep(1, nz)
   }else{
-    pweight <- Zup / Zdata[, "prob_treatment"] + (1 - Zup) / (1 - Zdata[, "prob_treatment"])
+    pweight <- Zup / Zdata[, prob_treatment] + (1 - Zup) / (1 - Zdata[, prob_treatment])
   }
   
   if (!is.null(covs)){
@@ -108,7 +108,7 @@ SpatialEffect <- function(ras = NULL, Ydata = NULL, outcome = NULL, x_coord_Y = 
     dUp <- dVec[d]
     Rim.list <- RimAvg(ras, Yobs, ras_Z, nz, Zup, Zdata, x_coord_Z, y_coord_Z, treatment, dUp, numpts, 
                        gridRes, evalpts, only.unique, dtype, dist.metric, cType)
-    quiet(gc())    
+    invisible(gc())
     Ybard <- Rim.list[[1]]
     Ybard_sum <- Rim.list[[2]]
     Ybard_len <- Rim.list[[3]]
@@ -153,9 +153,9 @@ SpatialEffect <- function(ras = NULL, Ydata = NULL, outcome = NULL, x_coord_Y = 
   result.list[["AMR_est"]] <- AMR_est
   c_n <- NULL
   if (per.se == 1){
-    if(!require(ri)){
-      install.packages("ri")
-      library(ri)
+    if(!require(ri2)){
+      install.packages("ri2")
+      library(ri2)
     }
     permMat <- genperms(Zup, blockvar = blockvar, clustvar = clustvar, maxiter = nPerms)
     VCE.per <- matrix(nrow = nPerms, ncol = length(dVec))
@@ -284,9 +284,9 @@ SpatialEffectTest <- function(result.list, test.range, smooth = 0, alpha = 0.05)
   nPerms <- result.list[["Parameters"]][[7]]
   AMR_est <- result.list[["AMR_est"]]
   
-  if (!require(ri)){
-    install.packages("ri")
-    library(ri)
+  if (!require(ri2)){
+    install.packages("ri2")
+    library(ri2)
   }
   if (is.null(test.range)){
     warning("test.range is not specified.")
