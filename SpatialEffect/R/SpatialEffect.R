@@ -76,9 +76,9 @@ SpatialEffect <- function(ras = NULL, Ydata = NULL, outcome = NULL, x_coord_Y = 
   result.list[["MIRhat.mat"]] <- MIRhat.mat
   
   if (per.se == 1){
-    if(!require(ri2)){
-      install.packages("ri2")
-      library(ri2)
+    if(!require(ri)){
+      install.packages("ri")
+      library(ri)
     }
     permMat <- genperms(Zup, blockvar = blockvar, clustvar = clustvar, maxiter = nPerms)
     VCE.per <- matrix(nrow = nPerms, ncol = length(dVec))
