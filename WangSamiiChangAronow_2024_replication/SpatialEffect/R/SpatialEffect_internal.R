@@ -62,26 +62,102 @@ RimAvg <- function(ras, Yobs = NULL, ras_Z = NULL, nz, Zup, Zdata, x_coord_Z, y_
       }
       numpts <- ceiling(ceiling(dUp/(gridRes/sqrt(2))+1)*pi)*evalpts
     }
-    for (i in 1:nz){
-      if (!is.null(ras_Z)){
-        coords <- GenSamplingPointsBuffer(center = as_Spatial(ras_Z[i, ]), ras = ras, radius = dUp,
-                                          cType = cType)
+    # Fast path: Euclidean + point centers can be vectorized by template offsets.
+    if (is.null(ras_Z) && dist.metric == "Euclidean"){
+      centers <- as.matrix(Zdata[, c(x_coord_Z, y_coord_Z)])
+      offset_template <- GenSamplingPoints(center = c(0, 0), radius = dUp, numpts = numpts,
+                                           dist.metric = dist.metric, cType = cType)
+      num_offsets <- nrow(offset_template)
+      group_index <- rep.int(seq_len(nz), each = num_offsets)
+      coords <- cbind(
+        rep.int(centers[, 1], each = num_offsets) + rep.int(offset_template[, 1], times = nz),
+        rep.int(centers[, 2], each = num_offsets) + rep.int(offset_template[, 2], times = nz)
+      )
+      grid_index <- cellFromXY(ras, coords)
+      valid <- !is.na(grid_index)
+      if (any(valid)){
+        group_index <- group_index[valid]
+        grid_index <- grid_index[valid]
+        if (only.unique == 1){
+          dedup_key <- paste(group_index, grid_index, sep = "_")
+          keep <- !duplicated(dedup_key)
+          group_index <- group_index[keep]
+          grid_index <- grid_index[keep]
+        }
+        grids <- Yobs[grid_index]
+        not_na <- !is.na(grids)
+        Ybard_sum <- rep(0, nz)
+        Ybard_len <- rep(0, nz)
+        if (any(not_na)){
+          sum_by_group <- rowsum(grids[not_na], group_index[not_na], reorder = FALSE)
+          Ybard_sum[as.integer(rownames(sum_by_group))] <- as.vector(sum_by_group[, 1])
+          Ybard_len <- tabulate(group_index[not_na], nbins = nz)
+        }
+        Ybard <- Ybard_sum / Ybard_len
       }else{
-        coords <- GenSamplingPoints(center = c(Zdata[i, x_coord_Z], Zdata[i, y_coord_Z]), 
-                                    radius = dUp, numpts = numpts, dist.metric = dist.metric,
-                                    cType = cType)
+        Ybard_sum <- rep(0, nz)
+        Ybard_len <- rep(0, nz)
+        Ybard <- Ybard_sum / Ybard_len
       }
-      if (only.unique == 1){
-        grid_index <- c(unique(na.omit(cellFromXY(ras, coords))))
-      }else{
-        grid_index <- c(na.omit(cellFromXY(ras, coords)))
-      }
-      grids <- Yobs[grid_index]
-      Ybard[i] <- mean(grids, na.rm = TRUE)
-      Ybard_sum[i] <- sum(grids, na.rm = TRUE)
-      Ybard_len[i] <- length(grids[!is.na(grids)])
-      rm(grid_index)
+      rm(centers)
+      rm(offset_template)
       rm(coords)
+      rm(grid_index)
+      rm(valid)
+      rm(group_index)
+    }else{
+      if (!is.null(ras_Z)){
+        # Pre-convert geometry once; then index directly by i.
+        ras_Z_spatial <- as_Spatial(ras_Z)
+        one_rim_stat <- function(i){
+          coords <- GenSamplingPointsBuffer(center = ras_Z_spatial[i, ], ras = ras, radius = dUp,
+                                            cType = cType)
+          if (only.unique == 1){
+            grid_index <- c(unique(na.omit(cellFromXY(ras, coords))))
+          }else{
+            grid_index <- c(na.omit(cellFromXY(ras, coords)))
+          }
+          grids <- Yobs[grid_index]
+          c(mean(grids, na.rm = TRUE),
+            sum(grids, na.rm = TRUE),
+            length(grids[!is.na(grids)]))
+        }
+        mc_cores <- getOption("mc.cores", 1L)
+        if (is.null(mc_cores) || !is.numeric(mc_cores) || length(mc_cores) != 1 || is.na(mc_cores)){
+          mc_cores <- 1L
+        }
+        mc_cores <- as.integer(max(1L, mc_cores))
+        if (.Platform$OS.type == "windows"){
+          mc_cores <- 1L
+        }
+        mc_cores <- min(mc_cores, nz)
+        rim_stats <- parallel::mclapply(seq_len(nz), one_rim_stat, mc.cores = mc_cores)
+        rim_mat <- do.call(rbind, rim_stats)
+        Ybard <- rim_mat[, 1]
+        Ybard_sum <- rim_mat[, 2]
+        Ybard_len <- rim_mat[, 3]
+        rm(rim_mat)
+        rm(rim_stats)
+        rm(one_rim_stat)
+        rm(ras_Z_spatial)
+      }else{
+        for (i in 1:nz){
+          coords <- GenSamplingPoints(center = c(Zdata[i, x_coord_Z], Zdata[i, y_coord_Z]), 
+                                      radius = dUp, numpts = numpts, dist.metric = dist.metric,
+                                      cType = cType)
+          if (only.unique == 1){
+            grid_index <- c(unique(na.omit(cellFromXY(ras, coords))))
+          }else{
+            grid_index <- c(na.omit(cellFromXY(ras, coords)))
+          }
+          grids <- Yobs[grid_index]
+          Ybard[i] <- mean(grids, na.rm = TRUE)
+          Ybard_sum[i] <- sum(grids, na.rm = TRUE)
+          Ybard_len[i] <- length(grids[!is.na(grids)])
+          rm(grid_index)
+          rm(coords)
+        }
+      }
     }
   }
   Rim.list <- list(Ybard, Ybard_sum, Ybard_len)
@@ -90,7 +166,8 @@ RimAvg <- function(ras, Yobs = NULL, ras_Z = NULL, nz, Zup, Zdata, x_coord_Z, y_
 
 # these two functions are based on Hainmueller et al. 2018
 LocalReg <- function(dVec, Sdata, bw, bw_debias = NULL, Zup = NULL, xevals = NULL, smooth.conley.se = 1, 
-                     kernel = "uni", cutoff = 0, dist = NULL, dist.metric = "Euclidean", bias_correction = TRUE){
+                     kernel = "uni", cutoff = 0, dist = NULL, dist.metric = "Euclidean", bias_correction = TRUE,
+                     Zdata = NULL, x_coord_Z = NULL, y_coord_Z = NULL){
   
   if (is.null(xevals)){
     xevals <- dVec
@@ -120,10 +197,16 @@ LocalReg <- function(dVec, Sdata, bw, bw_debias = NULL, Zup = NULL, xevals = NUL
     }else if (dist.metric == "Geodesic"){
       metric <- 2
     }
-    x_coord <- Zdata[, x_coord_Z]
-    y_coord <- Zdata[, y_coord_Z]
     if (is.null(dist)){
+      if (is.null(Zdata) || is.null(x_coord_Z) || is.null(y_coord_Z)){
+        stop("Zdata and coordinates must be provided when smooth.conley.se = 1 and dist is NULL")
+      }
+      x_coord <- Zdata[, x_coord_Z]
+      y_coord <- Zdata[, y_coord_Z]
       dist <- DistanceCalculation(as.vector(x_coord), as.vector(y_coord), as.integer(metric))[["Dist_mat"]]
+    }
+    if (is.null(Zdata)){
+      stop("Zdata must be provided when smooth.conley.se = 1")
     }
     # dist_rep <- diag(length(xevals)) %x% dist
     dist_rep <- matrix(rep(t(dist), length(xevals)), ncol=ncol(dist), byrow=TRUE)
@@ -200,13 +283,15 @@ LocalReg <- function(dVec, Sdata, bw, bw_debias = NULL, Zup = NULL, xevals = NUL
       }else if (kernel == "epa" | kernel == "epanechnikov"){
         k <- 3
       }
+      c <- cutoff
       if (cutoff > 0){
         c <- cutoff + xeval
       }
       dist_rep_s <- dist_rep[w_index, w_index]
       
-      Conley_result <- ConleySE(as.vector(res), as.matrix(W_meat), as.matrix(dist_rep_s), 
-                                as.double(c), as.integer(k))
+      Conley_result <- ConleySE(as.vector(res), as.matrix(W_meat), as.matrix(dist_rep_s),
+                                as.matrix(XX_mat_inv), as.double(c), as.integer(k),
+                                as.integer(0), as.integer(0))
       VCE <- t(XX_mat_inv) %*% Conley_result[["VCE_meat"]] %*% XX_mat_inv
       dist_kernel <- Conley_result[["Dist_kernel"]]
       wls_ses[i] <- sqrt(VCE[2, 2])
@@ -223,7 +308,8 @@ LocalReg <- function(dVec, Sdata, bw, bw_debias = NULL, Zup = NULL, xevals = NUL
 } 
 
 CrossValidation <- function(Sdata, outcome, treatment, dVec, grid = NULL, nfold = 5, block_cv = TRUE,
-                            parallel = FALSE, metric = "MSPE", kernel = "uni", bias_correction = TRUE){
+                            parallel = FALSE, metric = "MSPE", kernel = "uni", bias_correction = TRUE,
+                            Zdata = NULL, x_coord_Z = NULL, y_coord_Z = NULL){
  
   ## calculate error for testing set
   getError <- function(train, test, bw, outcome, treatment, dVec, bias_correction){
@@ -317,6 +403,9 @@ CrossValidation <- function(Sdata, outcome, treatment, dVec, grid = NULL, nfold 
   # fold <- sample(fold, n, replace = FALSE)
   # fold <- rep(0, nz)
   if (block_cv){
+    if (is.null(Zdata) || is.null(x_coord_Z) || is.null(y_coord_Z)){
+      stop("Zdata and coordinates must be provided when block_cv = TRUE")
+    }
     fold <- rep(0, nz)
     x_coord_Z_vec <- c(Zdata[, x_coord_Z])
     y_coord_Z_vec <- c(Zdata[, y_coord_Z])
