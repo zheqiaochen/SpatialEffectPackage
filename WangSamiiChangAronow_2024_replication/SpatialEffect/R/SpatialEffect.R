@@ -215,8 +215,9 @@ SpatialEffect <- function(ras = NULL, Ydata = NULL, outcome = NULL, x_coord_Y = 
       if (cutoff > 0){
         c <- cutoff + d
       }
-      Conley_result <- ConleySE(as.vector(res_d), as.matrix(W_meat), as.matrix(dist), 
-                                as.double(c), as.integer(k))
+      Conley_result <- ConleySE(as.vector(res_d), as.matrix(W_meat), as.matrix(dist),
+                                as.matrix(XX_mat_inv), as.double(c), as.integer(k),
+                                as.integer(0), as.integer(0))
       VCE_d <- t(XX_mat_inv) %*% Conley_result[["VCE_meat"]] %*% XX_mat_inv
       dist_kernel <- Conley_result[["Dist_kernel"]]
       if (edf){
@@ -237,11 +238,13 @@ SpatialEffect <- function(ras = NULL, Ydata = NULL, outcome = NULL, x_coord_Y = 
     if (is.null(bw) | is.null(bw_debias)){
       bw.result <- CrossValidation(Sdata, outcome = "outcome", treatment = "treatment", dVec, 
                                    grid = NULL, nfold = 5, block_cv = TRUE, parallel = FALSE, 
-                                   metric = "MSPE", kernel = kernel, bias_correction = bias_correction)
+                                   metric = "MSPE", kernel = kernel, bias_correction = bias_correction,
+                                   Zdata = Zdata, x_coord_Z = x_coord_Z, y_coord_Z = y_coord_Z)
       bw <- bw.result[[2]]
       bw_debias <- bw.result[[3]]
     }
-    wls_results <- LocalReg(dVec, Sdata, bw, bw_debias, Zup, xevals = NULL, smooth.conley.se, kernel, cutoff, dist, dist.metric, bias_correction)
+    wls_results <- LocalReg(dVec, Sdata, bw, bw_debias, Zup, xevals = NULL, smooth.conley.se, kernel, cutoff, dist, dist.metric, bias_correction,
+                            Zdata = Zdata, x_coord_Z = x_coord_Z, y_coord_Z = y_coord_Z)
     result.list[["AMR_est_smoothed"]] <- wls_results[["coefs"]]
     if (smooth.conley.se){
       if (edf){
