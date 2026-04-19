@@ -237,7 +237,7 @@ SpatialEffect <- function(ras = NULL, Ydata = NULL, outcome = NULL, x_coord_Y = 
   if (smooth == 1){
     if (is.null(bw) | is.null(bw_debias)){
       bw.result <- CrossValidation(Sdata, outcome = "outcome", treatment = "treatment", dVec, 
-                                   grid = NULL, nfold = 5, block_cv = TRUE, parallel = FALSE, 
+                                   grid = NULL, nfold = 5, block_cv = TRUE, parallel = TRUE, 
                                    metric = "MSPE", kernel = kernel, bias_correction = bias_correction,
                                    Zdata = Zdata, x_coord_Z = x_coord_Z, y_coord_Z = y_coord_Z)
       bw <- bw.result[[2]]

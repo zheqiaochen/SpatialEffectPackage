@@ -308,7 +308,7 @@ LocalReg <- function(dVec, Sdata, bw, bw_debias = NULL, Zup = NULL, xevals = NUL
 } 
 
 CrossValidation <- function(Sdata, outcome, treatment, dVec, grid = NULL, nfold = 5, block_cv = TRUE,
-                            parallel = FALSE, metric = "MSPE", kernel = "uni", bias_correction = TRUE,
+                            parallel = TRUE, metric = "MSPE", kernel = "uni", bias_correction = FALSE,
                             Zdata = NULL, x_coord_Z = NULL, y_coord_Z = NULL){
  
   ## calculate error for testing set
@@ -429,9 +429,16 @@ CrossValidation <- function(Sdata, outcome, treatment, dVec, grid = NULL, nfold 
   
   ## calculation
   if (parallel == TRUE) {
-    Error <- suppressWarnings(foreach(bw = grid, .combine = rbind,
-                                      .export = c("getError"),
-                                      .inorder = FALSE) %dopar% {cv(bw)})
+    mc_cores <- getOption("mc.cores", 1L)
+    if (is.null(mc_cores) || !is.numeric(mc_cores) || length(mc_cores) != 1 || is.na(mc_cores)){
+      mc_cores <- 1L
+    }
+    mc_cores <- as.integer(max(1L, mc_cores))
+    if (.Platform$OS.type == "windows"){
+      mc_cores <- 1L
+    }
+    mc_cores <- min(mc_cores, length(grid))
+    Error <- do.call(rbind, parallel::mclapply(grid, cv, mc.cores = mc_cores))
   } else {
     Error <- matrix(NA, length(grid), 5)
     for (i in 1:length(grid)) {
