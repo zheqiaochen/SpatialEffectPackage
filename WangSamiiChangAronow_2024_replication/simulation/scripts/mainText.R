@@ -17,7 +17,7 @@ library(geosphere)
 library(foreign)
 library(sp)
 library(fields)
-library(ri2)
+library(ri)
 library(sf)
 library(raster)
 
