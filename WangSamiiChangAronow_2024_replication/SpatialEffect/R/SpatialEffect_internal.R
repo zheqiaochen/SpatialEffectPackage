@@ -395,8 +395,10 @@ CrossValidation <- function(Sdata, outcome, treatment, dVec, grid = NULL, nfold 
   n <- dim(Sdata)[1]
   nz <- n/length(dVec)
   range_dVec <- max(dVec) - min(dVec)
-  if (is.null(grid)){
-    grid <- exp(seq(log(range_dVec/10), log(range_dVec), length.out = 40))
+  user_grid <- !is.null(grid)
+  if (!user_grid){
+    ## stage 1: coarse grid of 15 points over the full range
+    grid <- exp(seq(log(range_dVec/10), log(range_dVec), length.out = 15))
   }
   # fold <- rep(0, n)
   # fold <- c(0:(n-1))%%nfold + 1
@@ -428,24 +430,51 @@ CrossValidation <- function(Sdata, outcome, treatment, dVec, grid = NULL, nfold 
   }
   
   ## calculation
-  if (parallel == TRUE) {
-    mc_cores <- getOption("mc.cores", 1L)
-    if (is.null(mc_cores) || !is.numeric(mc_cores) || length(mc_cores) != 1 || is.na(mc_cores)){
-      mc_cores <- 1L
-    }
-    mc_cores <- as.integer(max(1L, mc_cores))
-    if (.Platform$OS.type == "windows"){
-      mc_cores <- 1L
-    }
-    mc_cores <- min(mc_cores, length(grid))
-    Error <- do.call(rbind, parallel::mclapply(grid, cv, mc.cores = mc_cores))
-  } else {
-    Error <- matrix(NA, length(grid), 5)
-    for (i in 1:length(grid)) {
-      Error[i, ] <- cv(grid[i])
-      cat(".")
+  runGrid <- function(grid){
+    if (parallel == TRUE) {
+      mc_cores <- getOption("mc.cores", 1L)
+      if (is.null(mc_cores) || !is.numeric(mc_cores) || length(mc_cores) != 1 || is.na(mc_cores)){
+        mc_cores <- 1L
+      }
+      mc_cores <- as.integer(max(1L, mc_cores))
+      if (.Platform$OS.type == "windows"){
+        mc_cores <- 1L
+      }
+      mc_cores <- min(mc_cores, length(grid))
+      Error <- do.call(rbind, parallel::mclapply(grid, cv, mc.cores = mc_cores))
+    } else {
+      Error <- matrix(NA, length(grid), 5)
+      for (i in 1:length(grid)) {
+        Error[i, ] <- cv(grid[i])
+        cat(".")
+      } 
     } 
-  } 
+    return(Error)
+  }
+  
+  Error <- runGrid(grid)
+  
+  if (!user_grid){
+    ## stage 2: refine 15 points between the neighbors of the stage-1 optimum
+    if (metric == "MAPE"){
+      best_idx <- which.min(Error[, 2])
+    }else{
+      best_idx <- which.min(Error[, 3])
+    }
+    lower_idx <- max(1, best_idx - 1)
+    upper_idx <- min(length(grid), best_idx + 1)
+    grid_stage2 <- exp(seq(log(grid[lower_idx]), log(grid[upper_idx]), length.out = 15))
+    ## drop points already evaluated in stage 1
+    grid_stage2 <- grid_stage2[!grid_stage2 %in% grid]
+    if (length(grid_stage2) > 0){
+      Error_stage2 <- runGrid(grid_stage2)
+      Error <- rbind(Error, Error_stage2)
+      grid <- c(grid, grid_stage2)
+      ord <- order(grid)
+      grid <- grid[ord]
+      Error <- Error[ord, , drop = FALSE]
+    }
+  }
   colnames(Error) <- c("bandwidth", "MAPE", "MSPE", "MAPE_debias", "MSPE_debias")
   rownames(Error) <- NULL
   
