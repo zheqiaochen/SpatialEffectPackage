@@ -153,9 +153,13 @@ SpatialEffect <- function(ras = NULL, Ydata = NULL, outcome = NULL, x_coord_Y = 
   result.list[["AMR_est"]] <- AMR_est
   c_n <- NULL
   if (per.se == 1){
-    if(!require(ri2)){
-      install.packages("ri2")
-      library(ri2)
+    if(!require(ri)){
+      install.packages(
+      "https://cran.r-project.org/src/contrib/Archive/ri/ri_0.9.tar.gz",
+      repos = NULL,
+      type = "source"
+    )
+      library(ri)
     }
     permMat <- genperms(Zup, blockvar = blockvar, clustvar = clustvar, maxiter = nPerms)
     VCE.per <- matrix(nrow = nPerms, ncol = length(dVec))
@@ -287,9 +291,13 @@ SpatialEffectTest <- function(result.list, test.range, smooth = 0, alpha = 0.05)
   nPerms <- result.list[["Parameters"]][[7]]
   AMR_est <- result.list[["AMR_est"]]
   
-  if (!require(ri2)){
-    install.packages("ri2")
-    library(ri2)
+  if (!require(ri)){
+    install.packages(
+      "https://cran.r-project.org/src/contrib/Archive/ri/ri_0.9.tar.gz",
+      repos = NULL,
+      type = "source"
+    )
+    library(ri)
   }
   if (is.null(test.range)){
     warning("test.range is not specified.")
