@@ -1,0 +1,36 @@
+Package: SpatialEffect2
+Type: Package
+Title: Design-Based Inference for Spatial Treatment Effects
+Version: 0.2.0
+Authors@R: c(
+    person("Ye", "Wang", email = "yw1576@nyu.edu", role = c("aut", "cre")),
+    person("Cyrus", "Samii", role = "aut"),
+    person("Haoge", "Chang", role = "aut"),
+    person("P. M.", "Aronow", role = "aut"))
+Description: Estimates the Average Marginalized Effect (AME) curve for spatial
+    experiments under unknown interference, as described in Wang, Samii, Chang
+    and Aronow (2024). The AME describes how treatment effects vary with
+    distance in space. Supports point and polygon interventions, edge/disk/donut
+    circle types, local polynomial smoothing with bias correction, Conley
+    spatial HAC standard errors, and sharp null randomization tests. Built on
+    the sf/terra spatial frameworks.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Depends:
+    R (>= 4.1.0)
+Imports:
+    sf (>= 1.0.0),
+    terra (>= 1.7.0),
+    fields (>= 14.0),
+    Rcpp (>= 1.0.9),
+    RcppArmadillo (>= 0.12.0),
+    future.apply (>= 1.10.0),
+    future (>= 1.30.0)
+Suggests:
+    geosphere (>= 1.5.18),
+    testthat (>= 3.0.0)
+LinkingTo:
+    Rcpp,
+    RcppArmadillo
+RoxygenNote: 7.3.1

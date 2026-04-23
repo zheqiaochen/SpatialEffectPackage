@@ -1,2 +1,25 @@
 .DS_Store
 .Rhistory
+**/.Rhistory
+
+# Compiled code
+*.o
+*.so
+*.dll
+
+# R CMD check / install scratch (e.g. pkg.Rcheck, typo ..Rcheck)
+*.Rcheck/
+..Rcheck/
+
+# install.sym helper (written under src/ during INSTALL)
+symbols.rds
+
+# Source bundle from R CMD build
+*.tar.gz
+
+# RStudio
+.Rproj.user/
+
+# Rcpp::compileAttributes()
+RcppExports.R
+RcppExports.cpp

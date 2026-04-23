@@ -1,0 +1,15 @@
+useDynLib(SpatialEffect2, .registration = TRUE)
+importFrom(Rcpp, evalCpp)
+
+import(sf)
+import(fields)
+importFrom(terra, rast, ext, res, ncol, nrow, ncell, values, cellFromXY, xyFromCell, vect, as.polygons, rasterize)
+import(future)
+import(future.apply)
+
+export(SpatialEffect)
+export(SpatialEffectTest)
+
+S3method(print, SpatialEffect)
+S3method(summary, SpatialEffect)
+S3method(plot, SpatialEffect)
