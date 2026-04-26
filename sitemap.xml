@@ -1,0 +1,24 @@
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>/404.html</loc></url>
+<url><loc>/LICENSE-text.html</loc></url>
+<url><loc>/README_zh.html</loc></url>
+<url><loc>/authors.html</loc></url>
+<url><loc>/index.html</loc></url>
+<url><loc>/reference/CrossValidation.html</loc></url>
+<url><loc>/reference/GenSamplingPoints.html</loc></url>
+<url><loc>/reference/GenSamplingPointsBuffer.html</loc></url>
+<url><loc>/reference/LocalReg.html</loc></url>
+<url><loc>/reference/RimAvg.html</loc></url>
+<url><loc>/reference/SpatialEffect.html</loc></url>
+<url><loc>/reference/SpatialEffect2-workflow.html</loc></url>
+<url><loc>/reference/SpatialEffectTest.html</loc></url>
+<url><loc>/reference/dot-display_results.html</loc></url>
+<url><loc>/reference/dot-gen_perms.html</loc></url>
+<url><loc>/reference/dot-parse_kernel.html</loc></url>
+<url><loc>/reference/dot-safe_solve_crossprod.html</loc></url>
+<url><loc>/reference/index.html</loc></url>
+<url><loc>/reference/plot.SpatialEffect.html</loc></url>
+<url><loc>/reference/print.SpatialEffect.html</loc></url>
+<url><loc>/reference/summary.SpatialEffect.html</loc></url>
+</urlset>
+
