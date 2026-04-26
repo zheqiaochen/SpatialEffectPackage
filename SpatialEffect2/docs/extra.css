@@ -1,0 +1,92 @@
+/* White, minimal pkgdown theme */
+:root {
+  --bs-body-bg: #ffffff;
+  --bs-body-color: #111827;
+  --bs-primary: #111827;
+  --bs-link-color: #1f2937;
+  --bs-link-hover-color: #000000;
+}
+
+body {
+  background: #ffffff;
+  color: #111827;
+}
+
+/* Clean white navbar */
+.navbar {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: none;
+}
+
+.navbar .navbar-brand,
+.navbar .nav-link,
+.navbar .navbar-text,
+.navbar .nav-text {
+  color: #111827 !important;
+}
+
+.navbar .nav-link:hover,
+.navbar .nav-link:focus {
+  color: #000000 !important;
+}
+
+.navbar .navbar-toggler {
+  border-color: #d1d5db;
+}
+
+/* Headings */
+.page-header {
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+}
+
+/* Inline code */
+:not(pre) > code {
+  background: #f3f4f6;
+  border-radius: 6px;
+  padding: 0.1rem 0.35rem;
+  color: #111827;
+}
+
+/* Code blocks: style only the PRE, not wrapper div */
+div.sourceCode {
+  background: transparent !important;
+  border: 0 !important;
+  margin: 0 0 1rem 0;
+  padding: 0;
+}
+
+pre.sourceCode {
+  background: #f8fafc !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 10px;
+  padding: 0.85rem 1rem !important;
+}
+
+pre.sourceCode code {
+  background: transparent !important;
+  padding: 0 !important;
+  color: inherit;
+}
+
+/* Remove underlines/blue links inside syntax-highlighted code */
+pre.sourceCode code a:any-link,
+pre.sourceCode code span a {
+  color: inherit !important;
+  text-decoration: none !important;
+  border-bottom: 0 !important;
+}
+
+pre.sourceCode code a:any-link:hover,
+pre.sourceCode code span a:hover {
+  color: inherit !important;
+  text-decoration: none !important;
+}
+
+/* Lighter table styling */
+.table {
+  --bs-table-bg: #ffffff;
+  --bs-table-striped-bg: #f9fafb;
+}

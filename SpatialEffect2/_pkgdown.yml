@@ -1,0 +1,27 @@
+template:
+  bootstrap: 5
+
+home:
+  title: SpatialEffect2
+  description: Design-based inference for spatial treatment effects under unknown interference.
+
+navbar:
+  structure:
+    left: [home, reference]
+    right: [search, github]
+
+reference:
+- title: Main Functions
+  contents:
+  - SpatialEffect
+  - SpatialEffectTest
+
+- title: Workflow Guide
+  contents:
+  - SpatialEffect2-workflow
+
+- title: Methods
+  contents:
+  - matches("^print\\.SpatialEffect$")
+  - matches("^summary\\.SpatialEffect$")
+  - matches("^plot\\.SpatialEffect$")

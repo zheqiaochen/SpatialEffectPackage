@@ -125,7 +125,7 @@ LocalReg <- function(dVec, Sdata, bw, bw_debias = NULL, Zup = NULL,
       res_vec <- as.numeric(W_K %*% wls_reg$residuals[w_index])
       X_mat <- W_K %*% as.matrix(model.matrix(wls_reg))[w_index, ]
       W_meat_local <- X_mat
-      XX_mat_inv_local <- solve(crossprod(X_mat))
+      XX_mat_inv_local <- .safe_solve_crossprod(X_mat)$inv
 
       if (bias_correction && !is.null(bw_debias)) {
         W_K_debias <- diag(sqrt(dat1_w$w_debias))
@@ -134,8 +134,9 @@ LocalReg <- function(dVec, Sdata, bw, bw_debias = NULL, Zup = NULL,
         X_mat_debias <- X_mat_debias_all[, 5:6, drop = FALSE]
         nu <- matrix(0, 2, num_debias_coefs)
         nu[1, 5] <- 1; nu[2, 6] <- 1
+        XX_mat_inv_debias <- .safe_solve_crossprod(X_mat_debias_all)$inv
         W_meat_local <- t(t(X_mat) - 0.5 * t(X_mat) %*% X_mat_debias %*%
-                     (nu %*% solve(crossprod(X_mat_debias_all)) %*% t(X_mat_debias_all)))
+                     (nu %*% XX_mat_inv_debias %*% t(X_mat_debias_all)))
         coef_debias <- 0.5 * XX_mat_inv_local %*%
           (t(X_mat) %*% X_mat_debias) %*% wls_coefs_debias_all[i, 5:6]
         wls_coef[2] <- wls_coef[2] - coef_debias[2]

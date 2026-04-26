@@ -264,7 +264,7 @@ SpatialEffect <- function(ras = NULL, Ydata = NULL, outcome = NULL,
 
     X_mat <- diag(sqrt(pweight)) %*% cbind(rep(1, nz), Zup)
     W_meat <- X_mat
-    XX_mat_inv <- solve(crossprod(X_mat))
+    XX_mat_inv <- .safe_solve_crossprod(X_mat)$inv
     z_vec <- c(0, 1) %*% XX_mat_inv %*% t(X_mat)
     M_mat <- diag(1, nz) - X_mat %*% XX_mat_inv %*% t(X_mat)
     dofs <- rep(NA_real_, length(dVec))
@@ -276,13 +276,13 @@ SpatialEffect <- function(ras = NULL, Ydata = NULL, outcome = NULL,
       if (!is.null(covs)) {
         X_mat <- cov.list[[d]]
         W_meat <- X_mat
-        XX_mat_inv <- solve(crossprod(X_mat))
+        XX_mat_inv <- .safe_solve_crossprod(X_mat)$inv
         z_coef <- rep(0, ncol(X_mat)); z_coef[2] <- 1
         z_vec <- z_coef %*% XX_mat_inv %*% t(X_mat)
         M_mat <- diag(1, nz) - X_mat %*% XX_mat_inv %*% t(X_mat)
       }
 
-      beta_d <- solve(crossprod(X_mat)) %*% (t(X_mat) %*% mu_d)
+      beta_d <- XX_mat_inv %*% (t(X_mat) %*% mu_d)
       res_d <- mu_d - X_mat %*% beta_d
 
       c_val <- if (cutoff > 0) cutoff + d else cutoff
