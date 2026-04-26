@@ -27,6 +27,8 @@ set.seed(2024)
 script_dir <- .get_script_dir()
 data_path <- file.path(script_dir, "..", "data")
 graph_path <- file.path(script_dir, "..", "graphs")
+dir.create(graph_path, recursive = TRUE, showWarnings = FALSE)
+dir.create(file.path(script_dir, "..", "data"), recursive = TRUE, showWarnings = FALSE)
 
 # ---- 1. Load spatial data ----
 protected_areas <- st_read(file.path(data_path, "Costa Rica/PAs_Reproj/PAs_before80_1.shp"), quiet = TRUE)
@@ -81,7 +83,8 @@ print(table(values(boundary_rast)[, 1], useNA = "ifany"))
 # ---- 4. Outcome raster ----
 mean(forest$defor97[forest$prot_b80 == 1]) - mean(forest$defor97[forest$prot_b80 == 0])
 
-res_fine <- 1000
+d_step <- 500
+res_fine <- d_step
 rast_template <- rast(ext(vect(forest)), res = res_fine, crs = crs_proj4)
 
 ras <- rasterize(vect(forest), rast_template, field = "defor97", fun = mean, na.rm = TRUE)
@@ -101,15 +104,19 @@ values_cov2 <- values(ras_cov2)[, 1]
 values_cov3 <- values(ras_cov3)[, 1]
 
 # ---- 6. Build Zdata from boundary polygons ----
-ras_Z_poly <- as.polygons(boundary_rast)
+# Keep one polygon per raster cell (no aggregation), matching the original script.
+ras_Z_poly <- as.polygons(boundary_rast, aggregate = FALSE)
 ras_Z_sf <- st_as_sf(ras_Z_poly)
 
-# Get cell indices of boundary tiles
-com_index <- which(!is.na(values(boundary_rast)[, 1]))
+n_nodes <- nrow(ras_Z_sf)
+value_cols <- setdiff(names(ras_Z_sf), attr(ras_Z_sf, "sf_column"))
+if (length(value_cols) < 1) {
+  stop("Boundary polygons do not contain a treatment value column.")
+}
+treatment_col <- value_cols[1]
 
-cov1 <- cov2 <- cov3 <- c()
-num_tiles <- c()
-boundary_vals <- values(boundary_rast)[, 1]
+cov1 <- cov2 <- cov3 <- rep(NA_real_, n_nodes)
+num_tiles <- rep(NA_integer_, n_nodes)
 
 for (i in seq_len(nrow(ras_Z_sf))) {
   one_poly <- vect(ras_Z_sf[i, ])
@@ -118,27 +125,31 @@ for (i in seq_len(nrow(ras_Z_sf))) {
   valid_cells <- which(!is.na(one_vals) & !is.nan(one_vals) & one_vals != 0)
 
   if (length(valid_cells) == 0) {
-    # Mark as NA in boundary raster for this tile
-    # (skip this polygon)
     next
   }
   coords <- xyFromCell(ras, valid_cells)
-  num_tiles <- c(num_tiles, nrow(coords))
+  num_tiles[i] <- nrow(coords)
   grid_idx1 <- na.omit(cellFromXY(ras_cov1, coords))
   grid_idx2 <- na.omit(cellFromXY(ras_cov2, coords))
   grid_idx3 <- na.omit(cellFromXY(ras_cov3, coords))
-  cov1 <- c(cov1, mean(values_cov1[grid_idx1], na.rm = TRUE))
-  cov2 <- c(cov2, mean(values_cov2[grid_idx2], na.rm = TRUE))
-  cov3 <- c(cov3, mean(values_cov3[grid_idx3], na.rm = TRUE))
+  cov1[i] <- mean(values_cov1[grid_idx1], na.rm = TRUE)
+  cov2[i] <- mean(values_cov2[grid_idx2], na.rm = TRUE)
+  cov3[i] <- mean(values_cov3[grid_idx3], na.rm = TRUE)
 }
 
 # ---- 7. Build Zdata and propensity scores ----
-Zdata <- data.frame(treatment = values(boundary_rast)[, 1])
-Zdata <- Zdata[!is.na(Zdata$treatment), , drop = FALSE]
-names(Zdata)[1] <- "treatment"
+Zdata <- data.frame(treatment = as.numeric(ras_Z_sf[[treatment_col]]))
 Zdata$cov1 <- cov1
 Zdata$cov2 <- cov2
 Zdata$cov3 <- cov3
+keep_idx <- is.finite(Zdata$treatment) &
+  is.finite(Zdata$cov1) &
+  is.finite(Zdata$cov2) &
+  is.finite(Zdata$cov3)
+Zdata <- Zdata[keep_idx, , drop = FALSE]
+ras_Z_sf <- ras_Z_sf[keep_idx, , drop = FALSE]
+cat("Intervention nodes kept:", nrow(Zdata), "\n")
+cat("Treated:", sum(Zdata$treatment == 1), "Control:", sum(Zdata$treatment == 0), "\n")
 
 pscore_fit <- glm(treatment ~ cov1 + cov2 + cov3, data = Zdata, family = "binomial")
 Zdata$prob_treatment <- predict(pscore_fit, type = "response")
@@ -152,11 +163,8 @@ plot(density(Zdata$prob_treatment),
      main = "Density of propensity score estimates")
 dev.off()
 
-# Refresh ras_Z_sf from boundary_rast
-ras_Z_sf <- st_as_sf(as.polygons(boundary_rast))
-
 # ---- 8. Set up SpatialEffect2 parameters ----
-dVec <- seq(from = 0, to = 20000, by = 500)
+dVec <- seq(from = 0, to = 20000, by = d_step)
 
 # ---- 9. Run SpatialEffect2 analysis (polygon intervention, donut) ----
 cat("\n=== Running SpatialEffect2 (polygon, donut) ===\n")
@@ -175,8 +183,9 @@ result.list <- SpatialEffect(
   cutoff = 15000,
   alpha = 0.05,
   edf = FALSE,
-  bw = NULL,
-  bw_debias = NULL,
+  # Paper Figure 13 uses a 5km triangular-kernel smoother.
+  bw = 5000,
+  bw_debias = 5000,
   bias_correction = TRUE,
   nPerms = 500,
   smooth.conley.se = 1,
