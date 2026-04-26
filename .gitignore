@@ -2,6 +2,9 @@
 .Rhistory
 **/.Rhistory
 
+.claude
+.vscode
+
 # Compiled code
 *.o
 *.so
