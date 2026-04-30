@@ -125,11 +125,11 @@ y_coord_Y = "y"
 \section{Output format (example structure)}{
 \strong{\code{SpatialEffect(...)} returns class \code{"SpatialEffect"}.}
 \preformatted{
-$AMR_est               # data.frame with columns d, taud_est
+$AME_est               # data.frame with columns d, taud_est
 $Per.CI                # optional matrix [length(dVec), 2]
 $Conley.SE             # optional numeric vector [length(dVec)]
 $Conley.CI             # optional matrix [length(dVec), 2]
-$AMR_est_smoothed      # optional matrix [length(dVec), 2]
+$AME_est_smoothed      # optional matrix [length(dVec), 2]
 $smoothed.Conley.SE    # optional numeric vector
 $smoothed.Conley.CI    # optional matrix [length(dVec), 2]
 $smoothed.Conley.CB    # optional matrix [length(dVec), 2]

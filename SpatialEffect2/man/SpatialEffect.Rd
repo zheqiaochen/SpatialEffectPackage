@@ -122,11 +122,11 @@ IPW (observational studies).}
 \value{
 An S3 object of class "SpatialEffect" containing:
 \describe{
-  \item{AMR_est}{Data frame of distance and AME estimates}
+  \item{AME_est}{Data frame of distance and AME estimates}
   \item{Per.CI}{Permutation confidence intervals (if per.se=1)}
   \item{Conley.SE}{Conley standard errors (if conley.se=1)}
   \item{Conley.CI}{Conley confidence intervals (if conley.se=1)}
-  \item{AMR_est_smoothed}{Smoothed estimates (if smooth=1)}
+  \item{AME_est_smoothed}{Smoothed estimates (if smooth=1)}
   \item{smoothed.Conley.SE}{Smoothed Conley SEs (if smooth=1 and smooth.conley.se=1)}
   \item{smoothed.Conley.CI}{Smoothed Conley CIs}
   \item{smoothed.Conley.CB}{Uniform confidence bands (if conf.band=1)}

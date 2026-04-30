@@ -45,14 +45,18 @@
 #' @param lambda Smoothing parameter for kriging (default 0.02).
 #' @param nPerms Number of permutations (default 1000).
 #' @param n_threads Number of threads for parallel C++ computation (default 1).
+#' @param perm_engine Permutation generator for randomization inference:
+#'   \code{"ri"} (default, uses \code{ri::genperms()}),
+#'   \code{"auto"} (use \code{ri} if installed, otherwise fallback to shuffle),
+#'   or \code{"shuffle"} (simple label reshuffling; ignores block/cluster design).
 #'
 #' @return An S3 object of class "SpatialEffect" containing:
 #' \describe{
-#'   \item{AMR_est}{Data frame of distance and AME estimates}
+#'   \item{AME_est}{Data frame of distance and AME estimates}
 #'   \item{Per.CI}{Permutation confidence intervals (if per.se=1)}
 #'   \item{Conley.SE}{Conley standard errors (if conley.se=1)}
 #'   \item{Conley.CI}{Conley confidence intervals (if conley.se=1)}
-#'   \item{AMR_est_smoothed}{Smoothed estimates (if smooth=1)}
+#'   \item{AME_est_smoothed}{Smoothed estimates (if smooth=1)}
 #'   \item{smoothed.Conley.SE}{Smoothed Conley SEs (if smooth=1 and smooth.conley.se=1)}
 #'   \item{smoothed.Conley.CI}{Smoothed Conley CIs}
 #'   \item{smoothed.Conley.CB}{Uniform confidence bands (if conf.band=1)}
@@ -75,7 +79,8 @@ SpatialEffect <- function(ras = NULL, Ydata = NULL, outcome = NULL,
                            conley.se = 1, kernel = "uni", cutoff = 0,
                            alpha = 0.05, edf = FALSE,
                            m = 2, lambda = 0.02, nPerms = 1000,
-                           n_threads = 1L) {
+                           n_threads = 1L,
+                           perm_engine = c("ri", "auto", "shuffle")) {
 
   # ---- Input validation ----
   if (is.null(Zdata) || is.null(treatment))
@@ -90,6 +95,7 @@ SpatialEffect <- function(ras = NULL, Ydata = NULL, outcome = NULL,
     stop("Unrecognized circle type: use 'edge', 'disk', or 'donut'")
   if (is.null(dVec) || length(dVec) == 0)
     stop("No distance values provided")
+  perm_engine <- match.arg(perm_engine)
 
   # ---- Handle polygon interventions (sf-based) ----
   if (!is.null(ras_Z)) {
@@ -169,7 +175,7 @@ SpatialEffect <- function(ras = NULL, Ydata = NULL, outcome = NULL,
   # ---- Compute circle averages for each distance ----
   Sdata.list <- list()
   cov.list <- list()
-  AMR_est <- data.frame(d = dVec, taud_est = NA_real_)
+  AME_est <- data.frame(d = dVec, taud_est = NA_real_)
   Ybards <- Ybard_sums <- Ybard_lens <- matrix(NA_real_, nz, length(dVec))
 
   message("Computing circle averages for each distance value...")
@@ -201,7 +207,7 @@ SpatialEffect <- function(ras = NULL, Ydata = NULL, outcome = NULL,
                         dVec = rep(dUp, nz), pweight = pweight)
       Sdata.list[[d]] <- one_data
       ols_fit <- lm(outcome ~ treatment, data = as.data.frame(one_data), weights = pweight)
-      AMR_est$taud_est[d] <- coef(ols_fit)[2]
+      AME_est$taud_est[d] <- coef(ols_fit)[2]
     } else {
       one_covs <- as.matrix(covs[((d - 1) * nz + 1):(d * nz), , drop = FALSE])
       for (cc in seq_len(ncol(one_covs))) {
@@ -215,7 +221,7 @@ SpatialEffect <- function(ras = NULL, Ydata = NULL, outcome = NULL,
         paste0("outcome ~ ", paste0("treatment * ", cov_names, collapse = " + "))
       )
       ols_fit <- lm(ols_formula, data = as.data.frame(one_data), weights = pweight)
-      AMR_est$taud_est[d] <- coef(ols_fit)[2]
+      AME_est$taud_est[d] <- coef(ols_fit)[2]
       cov.list[[d]] <- model.matrix(ols_fit)
     }
     message(sprintf("  d = %g (%d/%d)", dUp, d, length(dVec)))
@@ -226,13 +232,13 @@ SpatialEffect <- function(ras = NULL, Ydata = NULL, outcome = NULL,
 
   # ---- Results ----
   result.list <- list()
-  result.list[["AMR_est"]] <- AMR_est
+  result.list[["AME_est"]] <- AME_est
   c_n <- NULL
 
   # ---- Permutation inference ----
   if (per.se == 1) {
     permMat <- .gen_perms(Zup, blockvar = blockvar, clustvar = clustvar,
-                          maxiter = nPerms)
+                          maxiter = nPerms, engine = perm_engine)
     VCE_per <- matrix(NA_real_, nrow = ncol(permMat), ncol = length(dVec))
     for (i in seq_len(ncol(permMat))) {
       z_perm <- permMat[, i]
@@ -301,8 +307,8 @@ SpatialEffect <- function(ras = NULL, Ydata = NULL, outcome = NULL,
       }
     }
 
-    Conley.CI <- cbind(AMR_est$taud_est - qnorm(1 - alpha / 2) * Conley.SE,
-                       AMR_est$taud_est + qnorm(1 - alpha / 2) * Conley.SE)
+    Conley.CI <- cbind(AME_est$taud_est - qnorm(1 - alpha / 2) * Conley.SE,
+                       AME_est$taud_est + qnorm(1 - alpha / 2) * Conley.SE)
     result.list[["Conley.SE"]] <- Conley.SE
     result.list[["Conley.CI"]] <- Conley.CI
   }
@@ -326,7 +332,7 @@ SpatialEffect <- function(ras = NULL, Ydata = NULL, outcome = NULL,
                              dist.metric = dist.metric, bias_correction = bias_correction,
                              Zdata = Zdata, x_coord_Z = x_coord_Z, y_coord_Z = y_coord_Z,
                              n_threads = n_threads)
-    result.list[["AMR_est_smoothed"]] <- wls_results$coefs
+    result.list[["AME_est_smoothed"]] <- wls_results$coefs
     if (smooth.conley.se == 1) {
       if (edf) {
         result.list[["smoothed.Conley.SE"]] <- wls_results$ses / sqrt(dofs)
@@ -355,7 +361,7 @@ SpatialEffect <- function(ras = NULL, Ydata = NULL, outcome = NULL,
     blockvar = blockvar, clustvar = clustvar, nPerms = nPerms,
     conley.se = conley.se, per.se = per.se, smooth = smooth,
     smooth.conley.se = smooth.conley.se, bw = bw, bw_debias = bw_debias,
-    c_n = c_n, n_threads = n_threads
+    c_n = c_n, n_threads = n_threads, perm_engine = perm_engine
   )
   result.list$call <- match.call()
   class(result.list) <- "SpatialEffect"
@@ -377,21 +383,47 @@ SpatialEffect <- function(ras = NULL, Ydata = NULL, outcome = NULL,
 
 #' Generate permutation matrix
 #'
-#' Simple Bernoulli-style permutation matrix generator.
-#' Falls back to the ri package if available and blockvar/clustvar are specified.
+#' Uses \code{ri::genperms()} by default to preserve assignment mechanisms under
+#' complete, blocked, or clustered randomization. A simple label reshuffle
+#' fallback is available for users who explicitly request it.
 #' @keywords internal
-.gen_perms <- function(Zup, blockvar = NULL, clustvar = NULL, maxiter = 1000) {
-  nz <- length(Zup)
-  n_treat <- sum(Zup)
+.gen_perms <- function(Zup, blockvar = NULL, clustvar = NULL, maxiter = 1000,
+                       engine = c("ri", "auto", "shuffle")) {
+  engine <- match.arg(engine)
+  if (length(Zup) == 0) stop("Zup must be non-empty")
+  if (maxiter < 1) stop("maxiter must be >= 1")
+  maxiter <- as.integer(maxiter)
+  has_design_constraints <- !is.null(blockvar) || !is.null(clustvar)
 
-  if (!is.null(blockvar) || !is.null(clustvar)) {
-    # Try to use ri package for blocked/clustered permutations
-    if (requireNamespace("ri", quietly = TRUE)) {
-      return(ri::genperms(Zup, blockvar = blockvar, clustvar = clustvar,
-                          maxiter = maxiter))
-    }
-    warning("Package 'ri' not available; ignoring blockvar/clustvar for permutations")
+  use_ri <- FALSE
+  if (engine == "ri") {
+    use_ri <- TRUE
+  } else if (engine == "auto") {
+    use_ri <- requireNamespace("ri", quietly = TRUE)
   }
+
+  if (use_ri) {
+    if (!requireNamespace("ri", quietly = TRUE)) {
+      stop(
+        "Permutation engine 'ri' requested but package 'ri' is not installed.\n",
+        "Install with: install.packages(",
+        "'https://cran.r-project.org/src/contrib/Archive/ri/ri_0.9.tar.gz', ",
+        "repos = NULL, type = 'source')"
+      )
+    }
+    return(ri::genperms(Zup, blockvar = blockvar, clustvar = clustvar,
+                        maxiter = maxiter))
+  }
+
+  if (has_design_constraints) {
+    warning(
+      "Using 'shuffle' permutation engine with blockvar/clustvar supplied; ",
+      "design constraints are ignored. Prefer perm_engine = 'ri'.",
+      call. = FALSE
+    )
+  }
+
+  nz <- length(Zup)
 
   # Simple permutation: reshuffle treatment labels
   perm_mat <- matrix(NA_real_, nrow = nz, ncol = maxiter)

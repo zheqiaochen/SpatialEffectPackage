@@ -181,11 +181,11 @@ y_coord_Y = "y"
 
 `SpatialEffect(...)` 返回 `"SpatialEffect"` 对象，常见元素：
 
-- `AMR_est`：`data.frame`，列为 `d`, `taud_est`
+- `AME_est`：`data.frame`，列为 `d`, `taud_est`
 - `Per.CI`：`length(dVec) x 2`
 - `Conley.SE`：长度为 `length(dVec)` 的向量
 - `Conley.CI`：`length(dVec) x 2`
-- `AMR_est_smoothed`：平滑结果（`d`, `tau_smoothed`）
+- `AME_est_smoothed`：平滑结果（`d`, `tau_smoothed`）
 - `smoothed.Conley.CI` / `smoothed.Conley.CB`
 - `Parameters`：内部参数与中间量
 
