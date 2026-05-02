@@ -183,6 +183,7 @@ result.list <- SpatialEffect::SpatialEffect(ras = ras, Zdata = Zdata, x_coord_Z 
                              per.se = per.se, conley.se = conley.se, cutoff = cutoff, alpha = alpha, edf = edf, bw = 10.996, bw_debias = 25.13,
                              nPerms = nPerms, smooth.conley.se = 0, dist.metric = dist.metric, cType = "donut", kernel = kernel)
 
+# analysis with SpatialEffect2
 library(SpatialEffect2)
 result2.list <- SpatialEffect2::SpatialEffect(ras = ras, Zdata = Zdata, x_coord_Z = x_coord_Z, y_coord_Z = y_coord_Z, ras_Z = ras_Z, 
                                             treatment = treatment, dVec = dVec, numpts = numpts, only.unique = only.unique, smooth = smooth, 

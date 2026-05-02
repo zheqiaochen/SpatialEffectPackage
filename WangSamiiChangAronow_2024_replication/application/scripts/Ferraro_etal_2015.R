@@ -272,8 +272,8 @@ smoothed.Conley.CB <- result.list[["smoothed.Conley.CB"]]
 
 save(result.list, file = "../data/Ferraro_etal_2015.RData")
 
-test.result <- SpatialEffectTest(result.list, test.range = c(1000, 5000), smooth = 0)
-test.result <- SpatialEffect::SpatialEffectTest(result.list, test.range = c(1, 5), smooth = 0, alpha = 0.1)
+test.result <- SpatialEffect::SpatialEffectTest(result.list, test.range = c(1000, 5000), smooth = 0)
+test.result <- SpatialEffect::SpatialEffectTest(result.list, test.range = c(1000, 5000), smooth = 0, alpha = 0.1)
 
 # test result from SpatialEffect2
 test2.result <- SpatialEffect2::SpatialEffectTest(result2.list, test.range = c(1000, 5000), smooth = 0, alpha = 0.1)
