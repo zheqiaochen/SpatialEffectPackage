@@ -1,0 +1,92 @@
+---
+title: "Applications"
+description: "Downloadable data and step-by-step replication workflows for two SpatialEffect2 empirical applications."
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Applications}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+This page provides step-by-step replication entry points for the two applications in `WangSamiiChangAronow_2024_replication/application`. Each application includes a one-click download bundle (data + script) and a guided workflow.
+
+## 1. Ferraro et al. (2015): Costa Rica Protected Areas
+
+<a class="btn btn-primary" href="../applications/ferraro_etal_2015_sf_bundle.zip" download>Download Ferraro Data and Script (.zip)</a>
+
+### Step 1. Unzip and Keep the Directory Structure
+
+Please unzip to the following structure:
+
+```text
+Ferraro_etal_2015_sf/
+  data/
+  scripts/Ferraro_etal_2015_sf.R
+```
+
+### Step 2. Install Dependencies
+
+```{r}
+install.packages(c("SpatialEffect2", "sf", "terra", "fields"))
+```
+
+### Step 3. Run the Replication Script
+
+```{r}
+source("Ferraro_etal_2015_sf/scripts/Ferraro_etal_2015_sf.R")
+```
+
+### Step 4. Check the Outputs
+
+The script will generate:
+
+- Main result object: `data/Ferraro_etal_2015_sf.RData`
+- Figures: `graphs/` (including AME curves and propensity score plots)
+
+
+## 2. Jayachandran et al. (2017): Uganda RCT
+
+<a class="btn btn-primary" href="../applications/jayachandran_etal_2017_bundle.zip" download>Download Jayachandran Data and Script (.zip)</a>
+
+### Step 1. Unzip and Keep the Directory Structure
+
+Please unzip to the following structure:
+
+```text
+Jayachandran_etal_2017/
+  data/
+  scripts/Jayachandran_etal_2017.R
+```
+
+### Step 2. Install Dependencies
+
+```{r}
+install.packages(c("SpatialEffect2", "sf", "sp", "raster", "terra", "fields", "ggplot2"))
+```
+
+### Step 3. Run the Replication Script
+
+```{r}
+source("Jayachandran_etal_2017/scripts/Jayachandran_etal_2017.R")
+```
+
+### Step 4. Check the Outputs
+
+The script will generate:
+
+- Main result object: `data/forestResult_reproj.RData`
+- Figures: `graphs/` and `graphs/J2017_graphs/`
+
+
+## Notes
+
+- Both scripts set a fixed random seed (`set.seed(2024)`) for reproducibility.
+- Runtime depends on machine performance; randomization inference and spatial HAC standard error computation can take noticeable time.

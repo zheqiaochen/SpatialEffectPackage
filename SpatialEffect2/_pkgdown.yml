@@ -7,7 +7,7 @@ home:
 
 navbar:
   structure:
-    left: [home, reference]
+    left: [home, reference, articles]
     right: [search, github]
 
 reference:
@@ -25,3 +25,9 @@ reference:
   - matches("^print\\.SpatialEffect$")
   - matches("^summary\\.SpatialEffect$")
   - matches("^plot\\.SpatialEffect$")
+
+articles:
+- title: Applications
+  navbar: Applications
+  contents:
+  - applications

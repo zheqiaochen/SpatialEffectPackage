@@ -1,0 +1,5 @@
+"application","version","cType","sooth","n","treated","control","d_min","d_max","bw","bw_debias","ame_1","ame_5","smooth_1","smooth_5","test_stat_1_5","note"
+"ferraro","original","donut","no",765,233,532,0,20000,NA,NA,-0.01130934,-0.006577258,NA,NA,-0.06156506,"hits invalid exploratory point call, only the unsmoothed results are reported"
+"ferraro","spatialeffect2","donut","no",765,233,532,0,20000,NA,NA,-0.01130934,-0.006020756,NA,NA,-0.06183736,"to have a fair comparison, smooth was set to 0"
+"jay","original","donut","yes",121,60,61,0,30,10.996,25.13,-0.0090970124,-0.0071459158,−0.01027866,−0.006360363,-0.03964998,"original settings: Geodesic after km projection; smoothed estimates are NA"
+"jay","spatialeffect2","donut","yes",121,60,61,0,30,10.996,25.13,-0.009009225,-0.006959825,-0.01024941,-0.006356479,-0.03961043,"Euclidean after projection; bandwidth matched to original: bw=10.996, bw_debias=25.13"
