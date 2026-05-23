@@ -6,9 +6,23 @@
 }
 
 #' Print method for SpatialEffect objects
-#' @param x A SpatialEffect object
-#' @param dVec.range Optional 2-element vector to filter displayed distances
-#' @param ... Ignored
+#'
+#' Prints the distance-indexed AME estimates stored in a
+#' \code{"SpatialEffect"} object. If uncertainty estimates were computed, the
+#' displayed table also includes the available confidence-interval columns.
+#'
+#' @param x A \code{"SpatialEffect"} object returned by
+#'   \code{\link{SpatialEffect}}.
+#' @param dVec.range Optional numeric vector of length 2, \code{c(d_min, d_max)}.
+#'   When supplied, only distances inside this closed interval are displayed.
+#'   Use the same distance units as the original \code{dVec}.
+#' @param ... Additional arguments passed by the generic. Currently ignored.
+#'
+#' @return The formatted results table is printed. The printed matrix is returned
+#'   invisibly by the underlying print call.
+#'
+#' @seealso \code{\link{SpatialEffect}}, \code{\link{summary.SpatialEffect}},
+#'   \code{\link{plot.SpatialEffect}}
 #' @export
 print.SpatialEffect <- function(x, dVec.range = NULL, ...) {
   cat("Call: SpatialEffect\n\n")
@@ -16,9 +30,24 @@ print.SpatialEffect <- function(x, dVec.range = NULL, ...) {
 }
 
 #' Summary method for SpatialEffect objects
-#' @param object A SpatialEffect object
-#' @param dVec.range Optional 2-element vector to filter displayed distances
-#' @param ... Ignored
+#'
+#' Summarizes a \code{"SpatialEffect"} object as a compact table. The columns are
+#' determined by the components available in the object: point estimates are
+#' always shown, while Conley intervals, permutation intervals, smoothed
+#' estimates, and smoothed intervals are shown only when they were computed.
+#'
+#' @param object A \code{"SpatialEffect"} object returned by
+#'   \code{\link{SpatialEffect}}.
+#' @param dVec.range Optional numeric vector of length 2, \code{c(d_min, d_max)}.
+#'   When supplied, only distances inside this closed interval are displayed.
+#'   Use the same distance units as the original \code{dVec}.
+#' @param ... Additional arguments passed by the generic. Currently ignored.
+#'
+#' @return The formatted summary table is printed. The printed matrix is returned
+#'   invisibly by the underlying print call.
+#'
+#' @seealso \code{\link{SpatialEffect}}, \code{\link{print.SpatialEffect}},
+#'   \code{\link{plot.SpatialEffect}}
 #' @export
 summary.SpatialEffect <- function(object, dVec.range = NULL, ...) {
   cat("Call: SpatialEffect\n\n")
@@ -32,16 +61,28 @@ summary.SpatialEffect <- function(object, dVec.range = NULL, ...) {
 #' paired lines with distinct dash patterns, so they remain legible in
 #' grayscale printing. Set \code{style = "shade"} for translucent bands.
 #'
-#' @param x A SpatialEffect object
-#' @param smooth Plot smoothed estimates if available (default TRUE)
-#' @param ci.type Which CI to plot: "conley", "permutation", or "both"
+#' @param x A \code{"SpatialEffect"} object returned by
+#'   \code{\link{SpatialEffect}}.
+#' @param smooth Logical. If \code{TRUE}, plot the smoothed AME curve when the
+#'   object contains \code{AME_est_smoothed}. If no smoothed estimates are
+#'   available, this argument is ignored.
+#' @param ci.type Character string specifying which confidence intervals to draw:
+#'   \code{"conley"}, \code{"permutation"}, or \code{"both"}. Requested intervals
+#'   are drawn only if the corresponding components were computed by
+#'   \code{\link{SpatialEffect}}.
 #' @param style Rendering style for confidence intervals: \code{"lines"}
 #'   (default, B&W-print safe dashed lines) or \code{"shade"} (translucent
 #'   polygons).
 #' @param main Optional figure title. Defaults to no title (AER convention;
 #'   titles typically appear as figure captions).
-#' @param xlab,ylab Axis labels.
-#' @param ... Additional arguments passed to plot()
+#' @param xlab,ylab Axis labels passed to the base plotting call.
+#' @param ... Additional graphical arguments passed to \code{\link[graphics]{plot}}.
+#'
+#' @return Invisibly returns \code{NULL}. The method is called for its plotting
+#'   side effect.
+#'
+#' @seealso \code{\link{SpatialEffect}}, \code{\link{summary.SpatialEffect}},
+#'   \code{\link{print.SpatialEffect}}
 #' @export
 plot.SpatialEffect <- function(x,
                                smooth = TRUE,

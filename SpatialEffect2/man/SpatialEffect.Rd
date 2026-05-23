@@ -40,7 +40,8 @@ SpatialEffect(
   m = 2,
   lambda = 0.02,
   nPerms = 1000,
-  n_threads = 1L
+  n_threads = 1L,
+  perm_engine = c("ri", "auto", "shuffle")
 )
 }
 \arguments{
@@ -118,6 +119,11 @@ IPW (observational studies).}
 \item{nPerms}{Number of permutations (default 1000).}
 
 \item{n_threads}{Number of threads for parallel C++ computation (default 1).}
+
+\item{perm_engine}{Permutation generator for randomization inference:
+\code{"ri"} (default, uses \code{ri::genperms()}),
+\code{"auto"} (use \code{ri} if installed, otherwise fallback to shuffle),
+or \code{"shuffle"} (simple label reshuffling; ignores block/cluster design).}
 }
 \value{
 An S3 object of class "SpatialEffect" containing:

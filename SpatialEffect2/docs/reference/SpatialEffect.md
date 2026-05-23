@@ -43,7 +43,8 @@ SpatialEffect(
   m = 2,
   lambda = 0.02,
   nPerms = 1000,
-  n_threads = 1L
+  n_threads = 1L,
+  perm_engine = c("ri", "auto", "shuffle")
 )
 ```
 
@@ -51,8 +52,7 @@ SpatialEffect(
 
 - ras:
 
-  A
-  [`SpatRaster`](https://rspatial.github.io/terra/reference/SpatRaster-class.html)
+  A [`SpatRaster`](https://rdrr.io/pkg/terra/man/SpatRaster-class.html)
   of the outcome surface, or NULL to use kriging interpolation.
 
 - Ydata:
@@ -70,8 +70,8 @@ SpatialEffect(
 
 - ras_Z:
 
-  An [`sf`](https://r-spatial.github.io/sf/reference/sf.html) object for
-  polygon interventions, or NULL for point interventions. Can also be a
+  An [`sf`](https://rdrr.io/pkg/sf/man/sf.html) object for polygon
+  interventions, or NULL for point interventions. Can also be a
   SpatRaster or SpatVector which will be converted to sf.
 
 - Zdata:
@@ -193,11 +193,18 @@ SpatialEffect(
 
   Number of threads for parallel C++ computation (default 1).
 
+- perm_engine:
+
+  Permutation generator for randomization inference: `"ri"` (default,
+  uses [`ri::genperms()`](https://rdrr.io/pkg/ri/man/genperms.html)),
+  `"auto"` (use `ri` if installed, otherwise fallback to shuffle), or
+  `"shuffle"` (simple label reshuffling; ignores block/cluster design).
+
 ## Value
 
 An S3 object of class "SpatialEffect" containing:
 
-- AMR_est:
+- AME_est:
 
   Data frame of distance and AME estimates
 
@@ -213,7 +220,7 @@ An S3 object of class "SpatialEffect" containing:
 
   Conley confidence intervals (if conley.se=1)
 
-- AMR_est_smoothed:
+- AME_est_smoothed:
 
   Smoothed estimates (if smooth=1)
 

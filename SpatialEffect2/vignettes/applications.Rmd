@@ -1,9 +1,9 @@
 ---
-title: "Applications"
-description: "Downloadable data and step-by-step replication workflows for two SpatialEffect2 empirical applications."
+title: "Jayachandran et al. (2017)"
+description: "Jayachandran et al. (2017) as a concise running example for SpatialEffect2."
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Applications}
+  %\VignetteIndexEntry{Jayachandran et al. (2017)}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -12,81 +12,217 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  eval = FALSE
+  eval = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  dev.args = list(bg = "white")
+)
+
+locate_bundle <- function(bundle_name) {
+  candidates <- c(
+    file.path("pkgdown", "assets", "applications", bundle_name),
+    file.path("..", "pkgdown", "assets", "applications", bundle_name),
+    file.path("docs", "applications", bundle_name),
+    file.path("..", "docs", "applications", bundle_name)
+  )
+  hit <- candidates[file.exists(candidates)]
+  if (length(hit) == 0) return(NA_character_)
+  hit[[1]]
+}
+```
+
+## 1. Background
+
+This example follows Jayachandran et al. (2017), a randomized intervention in
+Uganda on forest conservation. Treatment is assigned at polygon units, and
+outcomes come from spatial forest-loss raster data. We use this setting to
+estimate how forest-loss effects vary with distance from each intervention
+polygon.
+
+<a class="btn btn-primary" href="../applications/jayachandran_etal_2017_bundle.zip" download>Download Jayachandran Data Bundle (.zip)</a>
+
+## 2. Load Data
+
+```{r}
+library(SpatialEffect2)
+library(terra)
+library(sf)
+
+# The article ships with a small replication bundle so the code does not rely
+# on any local file paths.
+jay_bundle <- locate_bundle("jayachandran_etal_2017_bundle.zip")
+stopifnot(!is.na(jay_bundle))
+
+td <- tempfile("jay2017_")
+dir.create(td)
+unzip(jay_bundle, exdir = td)
+
+base_dir <- file.path(td, "jayachandran_etal_2017")
+tif_path <- file.path(base_dir, "data", "rct_uganda_gfc_updated.tif")
+shp_path <- file.path(base_dir, "data", "digitized_rct", "rct_studyarea_vectorized.shp")
+
+ras_all <- rast(tif_path)
+
+# Use the forest-loss layer and coarsen it slightly so the vignette runs fast.
+ras_loss <- if ("fcloss2012" %in% names(ras_all)) ras_all[["fcloss2012"]] else ras_all[[min(3, nlyr(ras_all))]]
+ras <- aggregate(ras_loss, fact = 20, fun = mean, na.rm = TRUE)
+
+# Project to a meter-based CRS so distances in dVec are interpreted in meters.
+ras <- project(ras, "EPSG:32636")
+
+map_sf <- st_read(shp_path, quiet = TRUE)
+
+# SpatialEffect2 accepts polygon interventions through ras_Z.
+map_vect <- project(vect(map_sf), crs(ras))
+
+# Keep one treatment row per intervention polygon.
+Zdata <- data.frame(treatment = as.integer(st_drop_geometry(map_sf)$z))
+```
+
+## 3. Quick Descriptive Check
+
+```{r}
+# Basic assignment balance.
+c(
+  n_polygons = nrow(Zdata),
+  n_treated = sum(Zdata$treatment == 1),
+  n_control = sum(Zdata$treatment == 0),
+  treatment_share = mean(Zdata$treatment == 1)
+)
+
+# Outcome values after raster coarsening.
+summary(values(ras)[, 1])
+```
+
+## 4. Visualize the Data
+
+```{r, fig.width=7.4, fig.height=5.6, fig.alt="Coarsened raster map of forest-loss outcomes in the Uganda setting."}
+# First look at the outcome surface by itself.
+plot(
+  ras,
+  main = "Uganda Forest Loss Surface (Coarsened)",
+  col = hcl.colors(60, "YlGnBu", rev = TRUE)
 )
 ```
 
-This page provides step-by-step replication entry points for the two applications in `WangSamiiChangAronow_2024_replication/application`. Each application includes a one-click download bundle (data + script) and a guided workflow.
-
-## 1. Ferraro et al. (2015): Costa Rica Protected Areas
-
-<a class="btn btn-primary" href="../applications/ferraro_etal_2015_sf_bundle.zip" download>Download Ferraro Data and Script (.zip)</a>
-
-### Step 1. Unzip and Keep the Directory Structure
-
-Please unzip to the following structure:
-
-```text
-Ferraro_etal_2015_sf/
-  data/
-  scripts/Ferraro_etal_2015_sf.R
+```{r, fig.width=7.4, fig.height=5.8, fig.alt="Forest-loss raster overlaid with control and treated intervention polygons."}
+# Then overlay treatment and control polygons.
+plot(
+  ras,
+  main = "Outcome Surface with Treatment/Control Polygons",
+  col = hcl.colors(60, "YlGnBu", rev = TRUE)
+)
+plot(map_vect[Zdata$treatment == 0, ], add = TRUE, border = "#2C7FB8", lwd = 1.5)
+plot(map_vect[Zdata$treatment == 1, ], add = TRUE, border = "#D94841", lwd = 1.5)
+legend(
+  "topright",
+  legend = c("control", "treated"),
+  col = c("#2C7FB8", "#D94841"),
+  lwd = 2,
+  bty = "n"
+)
 ```
 
-### Step 2. Install Dependencies
+## 5. Estimand of Interest
+
+We target the **Average Marginalized Effect (AME)** at distance `d`: the average
+causal effect of switching one intervention node from control to treatment on
+outcomes at distance `d`, marginalized over other nodes' assignments.
+
+Here, distance is measured from each intervention polygon to surrounding raster
+cells. A negative AME means lower forest loss around treated polygons relative
+to control polygons at that distance.
+
+## 6. Estimate with SpatialEffect2
 
 ```{r}
-install.packages(c("SpatialEffect2", "sf", "terra", "fields"))
+dVec_km <- seq(0, 15, by = 1)
+
+# The raster is projected in meters, so convert the display grid from km to m.
+dVec_m <- dVec_km * 1000
+
+# With cType = "donut", each point after 0 km uses the adjacent 1-km ring:
+# 1 km uses [0, 1] km, 2 km uses [1, 2] km, and so on.
+
+result <- SpatialEffect(
+  ras = ras,
+  ras_Z = map_vect,
+  Zdata = Zdata,
+  treatment = "treatment",
+  dVec = dVec_m,
+  cType = "donut",
+  dist.metric = "Euclidean",
+  smooth = 0,
+
+  # Use Conley SE so the S3 plot can display uncertainty. For a fuller
+  # randomization analysis, increase nPerms and set per.se = 1.
+  per.se = 0,
+  conley.se = 1,
+  cutoff = 10000,
+  nPerms = 200,
+  n_threads = 1L
+)
+
+head(result$AME_est, 8)
 ```
 
-### Step 3. Run the Replication Script
+## 7. Look at the Estimated Results
+
+The returned object has class `"SpatialEffect"`, so `graphics::plot(result, ...)`
+dispatches to SpatialEffect2's S3 method, `plot.SpatialEffect()`.
+Because this run sets `conley.se = 1`, the plot includes Conley confidence
+intervals around the estimated AME curve.
+
+```{r, fig.width=7.4, fig.height=5.2, fig.alt="Estimated AME curve by distance for the Jayachandran application using the SpatialEffect S3 plot method."}
+graphics::plot(
+  result,
+  smooth = FALSE,
+  ci.type = "conley",
+  style = "lines",
+  xlab = "Distance from intervention polygon (meters)",
+  ylab = "Estimated AME",
+  main = "Estimated AME Curve"
+)
+```
 
 ```{r}
-source("Ferraro_etal_2015_sf/scripts/Ferraro_etal_2015_sf.R")
+# The S3 summary method is convenient for a quick numeric check.
+summary(result, dVec.range = c(0, 5000))
+
+ame <- result$AME_est
+ame$km <- ame$d / 1000
+subset(ame, km %in% c(0, 1, 3, 5, 10, 15))
 ```
 
-### Step 4. Check the Outputs
-
-The script will generate:
-
-- Main result object: `data/Ferraro_etal_2015_sf.RData`
-- Figures: `graphs/` (including AME curves and propensity score plots)
-
-
-## 2. Jayachandran et al. (2017): Uganda RCT
-
-<a class="btn btn-primary" href="../applications/jayachandran_etal_2017_bundle.zip" download>Download Jayachandran Data and Script (.zip)</a>
-
-### Step 1. Unzip and Keep the Directory Structure
-
-Please unzip to the following structure:
-
-```text
-Jayachandran_etal_2017/
-  data/
-  scripts/Jayachandran_etal_2017.R
-```
-
-### Step 2. Install Dependencies
+## 8. Optional: Test a Policy-Relevant Distance Range
 
 ```{r}
-install.packages(c("SpatialEffect2", "sf", "sp", "raster", "terra", "fields", "ggplot2"))
+# Test whether the summed AME over 0-3 km is unusual under random reassignment.
+test <- SpatialEffectTest(
+  result.list = result,
+  test.range = c(0, 3000),  # 0-3 km
+  smooth = 0,
+  alpha = 0.05
+)
+test
+
+test$test.stat < test$test.CI[1] || test$test.stat > test$test.CI[2]
 ```
 
-### Step 3. Run the Replication Script
+`TRUE` means the observed range-level effect lies outside the permutation null
+interval at level `alpha`.
 
-```{r}
-source("Jayachandran_etal_2017/scripts/Jayachandran_etal_2017.R")
-```
+## 9. Interpretation
 
-### Step 4. Check the Outputs
+In this run, AME estimates are negative at short distances and move toward zero
+at larger distances. Substantively, this pattern is consistent with stronger
+local treatment effects and weaker effects farther away.
 
-The script will generate:
+For permutation intervals at each distance, increase `nPerms` and set
+`per.se = 1`.
 
-- Main result object: `data/forestResult_reproj.RData`
-- Figures: `graphs/` and `graphs/J2017_graphs/`
+## 10. Reference
 
-
-## Notes
-
-- Both scripts set a fixed random seed (`set.seed(2024)`) for reproducibility.
-- Runtime depends on machine performance; randomization inference and spatial HAC standard error computation can take noticeable time.
+Jayachandran, S., J. de Laat, E. F. Lambin, C. Y. Stanton, R. Audy, and
+N. E. Thomas (2017). "Cash for carbon: A randomized trial of payments for
+ecosystem services to reduce deforestation." *Science* 357(6348): 267-273.

@@ -7,12 +7,25 @@
 \method{print}{SpatialEffect}(x, dVec.range = NULL, ...)
 }
 \arguments{
-\item{x}{A SpatialEffect object}
+\item{x}{A \code{"SpatialEffect"} object returned by
+\code{\link{SpatialEffect}}.}
 
-\item{dVec.range}{Optional 2-element vector to filter displayed distances}
+\item{dVec.range}{Optional numeric vector of length 2, \code{c(d_min, d_max)}.
+When supplied, only distances inside this closed interval are displayed.
+Use the same distance units as the original \code{dVec}.}
 
-\item{...}{Ignored}
+\item{...}{Additional arguments passed by the generic. Currently ignored.}
+}
+\value{
+The formatted results table is printed. The printed matrix is returned
+  invisibly by the underlying print call.
 }
 \description{
-Print method for SpatialEffect objects
+Prints the distance-indexed AME estimates stored in a
+\code{"SpatialEffect"} object. If uncertainty estimates were computed, the
+displayed table also includes the available confidence-interval columns.
+}
+\seealso{
+\code{\link{SpatialEffect}}, \code{\link{summary.SpatialEffect}},
+  \code{\link{plot.SpatialEffect}}
 }

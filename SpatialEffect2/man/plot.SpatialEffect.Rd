@@ -16,11 +16,17 @@
 )
 }
 \arguments{
-\item{x}{A SpatialEffect object}
+\item{x}{A \code{"SpatialEffect"} object returned by
+\code{\link{SpatialEffect}}.}
 
-\item{smooth}{Plot smoothed estimates if available (default TRUE)}
+\item{smooth}{Logical. If \code{TRUE}, plot the smoothed AME curve when the
+object contains \code{AME_est_smoothed}. If no smoothed estimates are
+available, this argument is ignored.}
 
-\item{ci.type}{Which CI to plot: "conley", "permutation", or "both"}
+\item{ci.type}{Character string specifying which confidence intervals to draw:
+\code{"conley"}, \code{"permutation"}, or \code{"both"}. Requested intervals
+are drawn only if the corresponding components were computed by
+\code{\link{SpatialEffect}}.}
 
 \item{style}{Rendering style for confidence intervals: \code{"lines"}
 (default, B&W-print safe dashed lines) or \code{"shade"} (translucent
@@ -29,13 +35,21 @@ polygons).}
 \item{main}{Optional figure title. Defaults to no title (AER convention;
 titles typically appear as figure captions).}
 
-\item{xlab, ylab}{Axis labels.}
+\item{xlab, ylab}{Axis labels passed to the base plotting call.}
 
-\item{...}{Additional arguments passed to plot()}
+\item{...}{Additional graphical arguments passed to \code{\link[graphics]{plot}}.}
+}
+\value{
+Invisibly returns \code{NULL}. The method is called for its plotting
+  side effect.
 }
 \description{
-Produces an AER-style figure. The default rendering (\code{style = "lines"})
+The default rendering (\code{style = "lines"})
 is fully black-and-white-print safe: confidence intervals are drawn as
 paired lines with distinct dash patterns, so they remain legible in
 grayscale printing. Set \code{style = "shade"} for translucent bands.
+}
+\seealso{
+\code{\link{SpatialEffect}}, \code{\link{summary.SpatialEffect}},
+  \code{\link{print.SpatialEffect}}
 }

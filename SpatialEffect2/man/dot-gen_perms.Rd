@@ -4,10 +4,17 @@
 \alias{.gen_perms}
 \title{Generate permutation matrix}
 \usage{
-.gen_perms(Zup, blockvar = NULL, clustvar = NULL, maxiter = 1000)
+.gen_perms(
+  Zup,
+  blockvar = NULL,
+  clustvar = NULL,
+  maxiter = 1000,
+  engine = c("ri", "auto", "shuffle")
+)
 }
 \description{
-Simple Bernoulli-style permutation matrix generator.
-Falls back to the ri package if available and blockvar/clustvar are specified.
+Uses \code{ri::genperms()} by default to preserve assignment mechanisms under
+complete, blocked, or clustered randomization. A simple label reshuffle
+fallback is available for users who explicitly request it.
 }
 \keyword{internal}

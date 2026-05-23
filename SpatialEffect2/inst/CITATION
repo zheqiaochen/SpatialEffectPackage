@@ -1,0 +1,14 @@
+citHeader("To cite SpatialEffect2, please cite the underlying methodology paper:")
+
+citEntry(
+  entry = "article",
+  title = "Design-Based Inference for Spatial Experiments under Unknown Interference",
+  author = personList(
+    as.person("Ye Wang"),
+    as.person("Cyrus Samii"),
+    as.person("Haoge Chang"),
+    as.person("P. M. Aronow")
+  ),
+  year = "2025",
+  journal = "The Annals of Appled Statistics"
+)

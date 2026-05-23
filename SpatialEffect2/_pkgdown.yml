@@ -7,8 +7,32 @@ home:
 
 navbar:
   structure:
-    left: [home, reference, articles]
+    left: [home, what_does, workflow, applications, reference]
     right: [search, github]
+  components:
+    what_does:
+      text: What does SpatialEffect2 do?
+      href: articles/what-does-spatialeffect2-do.html
+    workflow:
+      text: Analysis Workflow
+      href: reference/SpatialEffect2-workflow.html
+    applications:
+      text: Applications
+      menu:
+      - text: Jayachandran et al. (2017)
+        href: articles/applications.html
+      - text: Ferraro et al. (2015)
+        href: articles/ferraro-etal-2015.html
+    reference:
+      text: Function Reference
+      href: reference/index.html
+
+articles:
+- title: Articles
+  contents:
+  - what-does-spatialeffect2-do
+  - applications
+  - ferraro-etal-2015
 
 reference:
 - title: Main Functions
@@ -16,18 +40,12 @@ reference:
   - SpatialEffect
   - SpatialEffectTest
 
-- title: Workflow Guide
+- title: Analysis Workflow
   contents:
   - SpatialEffect2-workflow
 
-- title: Methods
+- title: S3 Methods
   contents:
   - matches("^print\\.SpatialEffect$")
   - matches("^summary\\.SpatialEffect$")
   - matches("^plot\\.SpatialEffect$")
-
-articles:
-- title: Applications
-  navbar: Applications
-  contents:
-  - applications
