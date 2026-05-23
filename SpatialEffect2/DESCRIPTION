@@ -34,4 +34,6 @@ VignetteBuilder: knitr
 LinkingTo:
     Rcpp,
     RcppArmadillo
+Remotes:
+    ri=url::https://cran.r-project.org/src/contrib/Archive/ri/ri_0.9.tar.gz
 RoxygenNote: 7.3.3
