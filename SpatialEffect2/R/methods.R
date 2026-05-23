@@ -1,7 +1,28 @@
+# Internal helper: prefer AME names, fallback to legacy AMR names
+.get_est_component <- function(x, base_name) {
+  if (!is.null(x[[base_name]])) return(x[[base_name]])
+  legacy <- sub("^AME", "AMR", base_name)
+  x[[legacy]]
+}
+
 #' Print method for SpatialEffect objects
-#' @param x A SpatialEffect object
-#' @param dVec.range Optional 2-element vector to filter displayed distances
-#' @param ... Ignored
+#'
+#' Prints the distance-indexed AME estimates stored in a
+#' \code{"SpatialEffect"} object. If uncertainty estimates were computed, the
+#' displayed table also includes the available confidence-interval columns.
+#'
+#' @param x A \code{"SpatialEffect"} object returned by
+#'   \code{\link{SpatialEffect}}.
+#' @param dVec.range Optional numeric vector of length 2, \code{c(d_min, d_max)}.
+#'   When supplied, only distances inside this closed interval are displayed.
+#'   Use the same distance units as the original \code{dVec}.
+#' @param ... Additional arguments passed by the generic. Currently ignored.
+#'
+#' @return The formatted results table is printed. The printed matrix is returned
+#'   invisibly by the underlying print call.
+#'
+#' @seealso \code{\link{SpatialEffect}}, \code{\link{summary.SpatialEffect}},
+#'   \code{\link{plot.SpatialEffect}}
 #' @export
 print.SpatialEffect <- function(x, dVec.range = NULL, ...) {
   cat("Call: SpatialEffect\n\n")
@@ -9,9 +30,24 @@ print.SpatialEffect <- function(x, dVec.range = NULL, ...) {
 }
 
 #' Summary method for SpatialEffect objects
-#' @param object A SpatialEffect object
-#' @param dVec.range Optional 2-element vector to filter displayed distances
-#' @param ... Ignored
+#'
+#' Summarizes a \code{"SpatialEffect"} object as a compact table. The columns are
+#' determined by the components available in the object: point estimates are
+#' always shown, while Conley intervals, permutation intervals, smoothed
+#' estimates, and smoothed intervals are shown only when they were computed.
+#'
+#' @param object A \code{"SpatialEffect"} object returned by
+#'   \code{\link{SpatialEffect}}.
+#' @param dVec.range Optional numeric vector of length 2, \code{c(d_min, d_max)}.
+#'   When supplied, only distances inside this closed interval are displayed.
+#'   Use the same distance units as the original \code{dVec}.
+#' @param ... Additional arguments passed by the generic. Currently ignored.
+#'
+#' @return The formatted summary table is printed. The printed matrix is returned
+#'   invisibly by the underlying print call.
+#'
+#' @seealso \code{\link{SpatialEffect}}, \code{\link{print.SpatialEffect}},
+#'   \code{\link{plot.SpatialEffect}}
 #' @export
 summary.SpatialEffect <- function(object, dVec.range = NULL, ...) {
   cat("Call: SpatialEffect\n\n")
@@ -25,16 +61,28 @@ summary.SpatialEffect <- function(object, dVec.range = NULL, ...) {
 #' paired lines with distinct dash patterns, so they remain legible in
 #' grayscale printing. Set \code{style = "shade"} for translucent bands.
 #'
-#' @param x A SpatialEffect object
-#' @param smooth Plot smoothed estimates if available (default TRUE)
-#' @param ci.type Which CI to plot: "conley", "permutation", or "both"
+#' @param x A \code{"SpatialEffect"} object returned by
+#'   \code{\link{SpatialEffect}}.
+#' @param smooth Logical. If \code{TRUE}, plot the smoothed AME curve when the
+#'   object contains \code{AME_est_smoothed}. If no smoothed estimates are
+#'   available, this argument is ignored.
+#' @param ci.type Character string specifying which confidence intervals to draw:
+#'   \code{"conley"}, \code{"permutation"}, or \code{"both"}. Requested intervals
+#'   are drawn only if the corresponding components were computed by
+#'   \code{\link{SpatialEffect}}.
 #' @param style Rendering style for confidence intervals: \code{"lines"}
 #'   (default, B&W-print safe dashed lines) or \code{"shade"} (translucent
 #'   polygons).
 #' @param main Optional figure title. Defaults to no title (AER convention;
 #'   titles typically appear as figure captions).
-#' @param xlab,ylab Axis labels.
-#' @param ... Additional arguments passed to plot()
+#' @param xlab,ylab Axis labels passed to the base plotting call.
+#' @param ... Additional graphical arguments passed to \code{\link[graphics]{plot}}.
+#'
+#' @return Invisibly returns \code{NULL}. The method is called for its plotting
+#'   side effect.
+#'
+#' @seealso \code{\link{SpatialEffect}}, \code{\link{summary.SpatialEffect}},
+#'   \code{\link{print.SpatialEffect}}
 #' @export
 plot.SpatialEffect <- function(x,
                                smooth = TRUE,
@@ -47,7 +95,8 @@ plot.SpatialEffect <- function(x,
   style <- match.arg(style)
   params <- x[["Parameters"]]
   dVec <- params$dVec
-  est <- x[["AMR_est"]]$taud_est
+  ame_est <- .get_est_component(x, "AME_est")
+  est <- ame_est$taud_est
 
   finite_est <- is.finite(est)
   if (!any(finite_est)) {
@@ -57,7 +106,8 @@ plot.SpatialEffect <- function(x,
 
   has_conley <- ci.type %in% c("conley", "both") && !is.null(x[["Conley.CI"]])
   has_perm   <- ci.type %in% c("permutation", "both") && !is.null(x[["Per.CI"]])
-  has_smooth <- isTRUE(smooth) && !is.null(x[["AMR_est_smoothed"]])
+  ame_est_smoothed <- .get_est_component(x, "AME_est_smoothed")
+  has_smooth <- isTRUE(smooth) && !is.null(ame_est_smoothed)
   has_sm_ci  <- has_smooth && !is.null(x[["smoothed.Conley.CI"]])
   has_sm_cb  <- has_smooth && !is.null(x[["smoothed.Conley.CB"]])
 
@@ -102,11 +152,11 @@ plot.SpatialEffect <- function(x,
                                grDevices::adjustcolor("black", alpha.f = 0.08))
     if (has_conley) shade_band(dVec, x[["Conley.CI"]][, 1], x[["Conley.CI"]][, 2],
                                grDevices::adjustcolor("black", alpha.f = 0.18))
-    if (has_sm_cb)  shade_band(x[["AMR_est_smoothed"]][, 1],
+    if (has_sm_cb)  shade_band(ame_est_smoothed[, 1],
                                x[["smoothed.Conley.CB"]][, 1],
                                x[["smoothed.Conley.CB"]][, 2],
                                grDevices::adjustcolor("black", alpha.f = 0.10))
-    if (has_sm_ci)  shade_band(x[["AMR_est_smoothed"]][, 1],
+    if (has_sm_ci)  shade_band(ame_est_smoothed[, 1],
                                x[["smoothed.Conley.CI"]][, 1],
                                x[["smoothed.Conley.CI"]][, 2],
                                grDevices::adjustcolor("black", alpha.f = 0.22))
@@ -119,11 +169,11 @@ plot.SpatialEffect <- function(x,
                                   lty = lty_conley)
     if (has_perm)   draw_ci_lines(dVec, x[["Per.CI"]][, 1],    x[["Per.CI"]][, 2],
                                   lty = lty_perm)
-    if (has_sm_ci)  draw_ci_lines(x[["AMR_est_smoothed"]][, 1],
+    if (has_sm_ci)  draw_ci_lines(ame_est_smoothed[, 1],
                                   x[["smoothed.Conley.CI"]][, 1],
                                   x[["smoothed.Conley.CI"]][, 2],
                                   lty = lty_sm_ci, lwd = 1.2, col = "gray25")
-    if (has_sm_cb)  draw_ci_lines(x[["AMR_est_smoothed"]][, 1],
+    if (has_sm_cb)  draw_ci_lines(ame_est_smoothed[, 1],
                                   x[["smoothed.Conley.CB"]][, 1],
                                   x[["smoothed.Conley.CB"]][, 2],
                                   lty = lty_sm_cb, lwd = 1.2, col = "gray25")
@@ -133,7 +183,7 @@ plot.SpatialEffect <- function(x,
   points(dVec, est, pch = 21, bg = "white", col = "black", cex = 0.7, lwd = 0.8)
 
   if (has_smooth) {
-    lines(x[["AMR_est_smoothed"]][, 1], x[["AMR_est_smoothed"]][, 2],
+    lines(ame_est_smoothed[, 1], ame_est_smoothed[, 2],
           col = "black", lwd = 2.0)
   }
 
@@ -194,8 +244,10 @@ plot.SpatialEffect <- function(x,
 #' Internal function to format and display results
 #' @keywords internal
 .display_results <- function(x, dVec.range = NULL) {
-  output <- x[["AMR_est"]]
-  cnames <- c("dVec", "AMR_est")
+  ame_est <- .get_est_component(x, "AME_est")
+  ame_est_smoothed <- .get_est_component(x, "AME_est_smoothed")
+  output <- ame_est
+  cnames <- c("dVec", "AME_est")
 
   if (x[["Parameters"]]$conley.se == 1 && !is.null(x[["Conley.CI"]])) {
     output <- cbind(output, x[["Conley.CI"]])
@@ -205,9 +257,9 @@ plot.SpatialEffect <- function(x,
     output <- cbind(output, x[["Per.CI"]])
     cnames <- c(cnames, "Per.CI.l", "Per.CI.u")
   }
-  if (x[["Parameters"]]$smooth == 1 && !is.null(x[["AMR_est_smoothed"]])) {
-    output <- cbind(output, x[["AMR_est_smoothed"]][, 2])
-    cnames <- c(cnames, "AMR_smoothed")
+  if (x[["Parameters"]]$smooth == 1 && !is.null(ame_est_smoothed)) {
+    output <- cbind(output, ame_est_smoothed[, 2])
+    cnames <- c(cnames, "AME_smoothed")
   }
   if (x[["Parameters"]]$smooth.conley.se == 1 && !is.null(x[["smoothed.Conley.CI"]])) {
     output <- cbind(output, x[["smoothed.Conley.CI"]])

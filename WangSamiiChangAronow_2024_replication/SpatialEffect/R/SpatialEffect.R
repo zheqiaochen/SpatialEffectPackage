@@ -25,9 +25,9 @@ SpatialEffect <- function(ras = NULL, Ydata = NULL, outcome = NULL, x_coord_Y = 
       # values in ras_Z indicate which polygon a cell belongs to
       ras_Z <- rasterToPolygons(ras_Z)
       ras_Z_coords <- gCentroid(ras_Z, byid = TRUE)@coords
-      ras_Z <- st_as_sf(ras_Z)
+      ras_Z <- sf::st_as_sf()(ras_Z)
     }else if (class(ras_Z)[1] == "SpatialPolygonsDataFrame"){
-      ras_Z <- st_as_sf(ras_Z)
+      ras_Z <- sf::st_as_sf()(ras_Z)
       ras_Z_coords <- st_coordinates(st_centroid(ras_Z))
     }else if (class(ras_Z)[1] == "sf"){
       ras_Z_coords <- st_coordinates(st_centroid(ras_Z))

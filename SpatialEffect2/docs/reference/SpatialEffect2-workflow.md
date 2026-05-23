@@ -1,336 +1,187 @@
-# SpatialEffect2 Workflow Guide: Detailed Inputs, Parameters, and Practice
+# SpatialEffect2 Analysis Workflow
 
-Practical operations manual for `SpatialEffect2`. This page documents
-input templates, argument meanings, expected output formats, and
-step-by-step analysis practice.
+A decision guide for planning a SpatialEffect2 analysis. The tutorial
+shows how to run a complete example; this page helps decide what to
+pass, which estimand to use, and which checks to run before interpreting
+results.
 
-## Core functions
+## How to use this page
 
-- [`SpatialEffect`](SpatialEffect.md): estimate distance-indexed AME
-  curves.
+Use this page before or during an empirical analysis. It is not a second
+tutorial. It is a checklist for choices that affect the estimand,
+computation, and uncertainty.
 
-- [`SpatialEffectTest`](SpatialEffectTest.md): randomization test on a
-  distance range.
+## Decision 1: what is the outcome surface?
 
-- S3 methods for class `"SpatialEffect"`:
-  [`print()`](https://rdrr.io/r/base/print.html),
-  [`summary()`](https://rspatial.github.io/terra/reference/summary.html),
-  [`plot()`](https://rspatial.github.io/terra/reference/plot.html).
+- Raster outcome:
 
-## Input templates (recommended formats)
+  Use `ras` when the outcome is already a gridded surface, such as
+  forest loss, pollution, temperature, or population density. This is
+  the most direct workflow.
 
-**Template A: point interventions**
+- Point outcome:
 
-    # one row per intervention node
-    Zdata <- data.frame(
-      id = 1:nz,
-      x = ...,   # numeric x coordinate
-      y = ...,   # numeric y coordinate
-      treat = ... # 0/1 treatment
+  Use `Ydata`, `outcome`, `x_coord_Y`, and `y_coord_Y` when outcomes are
+  point measurements. Set `ras = NULL` so SpatialEffect2 interpolates an
+  outcome surface.
+
+**Check:** the outcome and intervention objects should use compatible
+coordinate reference systems. For `dist.metric = "Euclidean"`, distances
+are interpreted in the units of the projected CRS.
+
+## Decision 2: what is the intervention geometry?
+
+- Point interventions:
+
+  Use `Zdata` with one row per node plus coordinate columns supplied
+  through `x_coord_Z` and `y_coord_Z`.
+
+- Polygon interventions:
+
+  Pass polygons through `ras_Z`. Keep one row in `Zdata` per polygon, in
+  the same order as `ras_Z`. Coordinates are taken from polygon
+  centroids internally.
+
+**Check:** `nrow(Zdata)` must match the number of intervention nodes.
+For polygons, row order matters.
+
+## Decision 3: which distance design answers the question?
+
+- `cType = "edge"`:
+
+  Use the outcome boundary at exactly distance `d`. This is closest to
+  asking, "What happens right at this distance?"
+
+- `cType = "disk"`:
+
+  Use the cumulative region from `0` through `d`. This is useful for
+  total neighborhood effects up to a radius.
+
+- `cType = "donut"`:
+
+  Use adjacent rings. This is often easiest to interpret when asking how
+  effects change as we move outward.
+
+**Check:** for `"donut"`, choose a `dVec` step that is not much smaller
+than the raster resolution. Very thin rings can create empty-ring `NA`
+values.
+
+## Decision 4: experimental or observational study?
+
+- Experimental study:
+
+  If treatment probabilities are known by design and no weighting is
+  needed, omit `prob_treatment`. Use `blockvar` or `clustvar` if
+  randomization was blocked or clustered.
+
+- Observational study:
+
+  Estimate or supply a propensity score in `Zdata`, then pass its column
+  name through `prob_treatment`. Inspect overlap before interpreting the
+  weighted estimates.
+
+**Check:** propensity scores near 0 or 1 can dominate weighted
+estimates. Plot or summarize the propensity-score distribution.
+
+## Decision 5: how should uncertainty be shown?
+
+- `conley.se = 1`:
+
+  Adds spatial HAC standard errors and `Conley.CI`. Use `cutoff` and
+  `kernel` for sensitivity checks.
+
+- `per.se = 1`:
+
+  Adds permutation intervals `Per.CI`. Increase `nPerms` for final
+  results.
+
+- `smooth = 1`:
+
+  Adds a smoothed AME curve. Use it after the unsmoothed curve is
+  understandable.
+
+- `smooth.conley.se = 1`:
+
+  Adds uncertainty for the smoothed curve. This is more computationally
+  demanding.
+
+**Practical default:** start with `smooth = 0`, inspect the raw AME
+curve, then add smoothing and sensitivity checks.
+
+## Templates
+
+**Point interventions**
+
+    res <- SpatialEffect(
+      ras = ras,
+      Zdata = Zdata,
+      x_coord_Z = "x",
+      y_coord_Z = "y",
+      treatment = "treat",
+      dVec = dVec,
+      cType = "donut"
     )
 
-    # required call pieces
-    x_coord_Z = "x"
-    y_coord_Z = "y"
-    treatment = "treat"
+**Polygon interventions**
 
-**Template B: polygon interventions**
+    res <- SpatialEffect(
+      ras = ras,
+      ras_Z = ras_Z,
+      Zdata = Zdata,
+      treatment = "treat",
+      dVec = dVec,
+      cType = "donut"
+    )
 
-    # ras_Z must be sf / SpatRaster / SpatVector
-    ras_Z <- intervention_sf
-    Zdata <- data.frame(treat = c(1,0,1,...))
-    # node coordinates are derived internally from centroids
+**Observational study with propensity weights**
 
-**Template C: kriging mode (no raster)**
+    res <- SpatialEffect(
+      ras = ras,
+      ras_Z = ras_Z,
+      Zdata = Zdata,
+      treatment = "treat",
+      prob_treatment = "p_treat",
+      dVec = dVec,
+      cType = "donut"
+    )
 
-    ras = NULL
-    Ydata <- data.frame(x = ..., y = ..., outcome = ...)
-    outcome = "outcome"
-    x_coord_Y = "x"
-    y_coord_Y = "y"
+## After estimation
 
-## Argument reference for `SpatialEffect`
+    summary(res, dVec.range = c(d_min, d_max))
+    plot(res, ci.type = "conley")
+    SpatialEffectTest(res, test.range = c(d_min, d_max), smooth = 0)
 
-**Always required**
+- [`summary()`](https://rdrr.io/pkg/terra/man/summary.html):
 
-- `Zdata`:
+  Use for a compact numeric table at a relevant distance range.
 
-  Data frame of intervention nodes; one row per node.
+- [`plot()`](https://rdrr.io/pkg/terra/man/plot.html):
 
-- `treatment`:
+  Use for the AME curve and available intervals.
 
-  Character name of binary treatment column in `Zdata`.
+- [`SpatialEffectTest()`](SpatialEffectTest.md):
 
-- `dVec`:
+  Use for a policy-relevant distance band, such as 0–5 km.
 
-  Numeric distance grid where AME is evaluated.
+## Troubleshooting checklist
 
-**Outcome and geometry inputs**
+- Many `NA` estimates:
 
-- `ras`:
+  Check CRS alignment, spatial overlap, row order between `ras_Z` and
+  `Zdata`, and whether donut rings are too thin relative to raster
+  resolution.
 
-  [`terra::SpatRaster`](https://rspatial.github.io/terra/reference/SpatRaster-class.html)
-  outcome surface. If `NULL`, kriging interpolation is used.
+- Runtime is slow:
 
-- `Ydata`:
+  Reduce `numpts`, reduce `nPerms`, start with `smooth = 0`, or increase
+  `n_threads`.
 
-  Outcome point data frame used in kriging mode.
+- Confidence intervals are very wide:
 
-- `outcome`:
+  Check treatment balance, propensity-score overlap, distance bands with
+  few outcome cells, and sensitivity to `cutoff`.
 
-  Outcome column name in `Ydata` (or in `Zdata` if `Ydata = NULL`).
+- Results change with `dVec`:
 
-- `x_coord_Y`, `y_coord_Y`:
-
-  Coordinate column names in `Ydata`.
-
-- `ras_Z`:
-
-  Polygon interventions as `sf`, `SpatRaster`, or `SpatVector`; `NULL`
-  means point intervention mode.
-
-- `x_coord_Z`, `y_coord_Z`:
-
-  Coordinate column names in `Zdata`; required in point mode.
-
-**Distance definition and sampling**
-
-- `cType`:
-
-  Distance set type: `"edge"`, `"disk"`, or `"donut"`.
-
-- `dist.metric`:
-
-  `"Euclidean"` or `"Geodesic"`.
-
-- `numpts`:
-
-  Points sampled per circle boundary; auto-selected if `NULL`.
-
-- `evalpts`:
-
-  Multiplier for auto-selected `numpts`.
-
-- `only.unique`:
-
-  If `1`, deduplicate sampled raster cells per node.
-
-**Design adjustment**
-
-- `covs`:
-
-  Optional covariate matrix. Accepts either `nz x p` or
-  `(nz * length(dVec)) x p`.
-
-- `prob_treatment`:
-
-  Propensity-score column name for IPW adjustment.
-
-- `blockvar`:
-
-  Optional block variable for permutation design.
-
-- `clustvar`:
-
-  Optional cluster variable for permutation design.
-
-**Inference controls**
-
-- `per.se`:
-
-  If `1`, compute permutation interval `Per.CI`.
-
-- `conley.se`:
-
-  If `1`, compute Conley HAC `Conley.SE` and `Conley.CI`.
-
-- `kernel`:
-
-  Conley kernel: `"uni"`/`"uniform"`, `"tri"`/`"triangular"`,
-  `"epa"`/`"epanechnikov"`.
-
-- `cutoff`:
-
-  Spatial kernel bandwidth for Conley HAC.
-
-- `alpha`:
-
-  Significance level used for intervals.
-
-- `edf`:
-
-  Use effective-DOF adjustment for Conley SE.
-
-- `nPerms`:
-
-  Number of permutations.
-
-**Smoothing controls**
-
-- `smooth`:
-
-  If `1`, run local-polynomial smoothing on AME curve.
-
-- `bw`:
-
-  Smoothing bandwidth; if `NULL`, selected by CV.
-
-- `bw_debias`:
-
-  Bias-correction bandwidth; if `NULL`, selected by CV when needed.
-
-- `bias_correction`:
-
-  If `TRUE`, compute debiased smoother.
-
-- `smooth.conley.se`:
-
-  If `1`, compute uncertainty for smoothed curve.
-
-- `conf.band`:
-
-  If `1`, compute uniform confidence band for smoothed curve.
-
-**Kriging and compute controls**
-
-- `m`, `lambda`:
-
-  Kriging controls used when `ras = NULL`.
-
-- `n_threads`:
-
-  Thread count for C++ distance and HAC kernels.
-
-## Argument reference for `SpatialEffectTest`
-
-- `result.list`:
-
-  A `"SpatialEffect"` object returned by `SpatialEffect`.
-
-- `test.range`:
-
-  Length-2 numeric vector `c(d_min, d_max)` for the tested distance
-  interval.
-
-- `smooth`:
-
-  If `1`, test uses smoothed curve; otherwise unsmoothed AME.
-
-- `alpha`:
-
-  Significance level for permutation interval.
-
-## Output format (example structure)
-
-**`SpatialEffect(...)` returns class `"SpatialEffect"`.**
-
-    $AMR_est               # data.frame with columns d, taud_est
-    $Per.CI                # optional matrix [length(dVec), 2]
-    $Conley.SE             # optional numeric vector [length(dVec)]
-    $Conley.CI             # optional matrix [length(dVec), 2]
-    $AMR_est_smoothed      # optional matrix [length(dVec), 2]
-    $smoothed.Conley.SE    # optional numeric vector
-    $smoothed.Conley.CI    # optional matrix [length(dVec), 2]
-    $smoothed.Conley.CB    # optional matrix [length(dVec), 2]
-    $Parameters            # list used by methods/tests
-    $call                  # stored call
-
-**`SpatialEffectTest(...)` returns:**
-
-    $test.stat             # scalar statistic on selected range
-    $test.CI               # length-2 permutation interval
-
-## Practical workflow checklist
-
-1.  Check CRS alignment and spatial overlap first.
-
-2.  Start with conservative baseline: `smooth = 0`, `per.se = 1`,
-    `conley.se = 1`.
-
-3.  Use `dVec` step size similar to raster resolution for `"donut"` to
-    reduce empty-ring `NA`.
-
-4.  Add smoothing only after unsmoothed curve is interpretable.
-
-5.  Test policy-relevant ranges with `SpatialEffectTest`.
-
-6.  Run sensitivity checks over `cType`, `cutoff`, `kernel`, and `dVec`
-    granularity.
-
-## Common issues and fixes
-
-**Issue: many `NA` values in AME**
-
-- CRS mismatch between outcome and intervention objects.
-
-- No or weak spatial overlap.
-
-- Misalignment between `Zdata` rows and intervention geometries.
-
-- `"donut"` rings too narrow relative to raster resolution.
-
-**Issue: unstable smoothing / singular design**
-
-- Increase `bw` and `bw_debias`.
-
-- Reduce collinearity in `covs`.
-
-- Use less dense `dVec`.
-
-**Issue: runtime too slow**
-
-- Increase `n_threads`.
-
-- Decrease `nPerms`.
-
-- Reduce sampling load via `numpts` and `evalpts`.
-
-## Author
-
-Package authors: Ye Wang, Cyrus Samii, Haoge Chang, and P. M. Aronow.
-
-This workflow page is maintained as a practical user reference.
-
-## Examples
-
-``` r
-if (FALSE) { # \dontrun{
-library(SpatialEffect2)
-library(terra)
-
-set.seed(1)
-
-# 1) outcome raster
-ras <- rast(nrows = 60, ncols = 60, xmin = 0, xmax = 60, ymin = 0, ymax = 60)
-values(ras) <- rnorm(ncell(ras))
-
-# 2) intervention nodes
-nz <- 100
-Zdata <- data.frame(
-  x = runif(nz, 2, 58),
-  y = runif(nz, 2, 58),
-  treat = rbinom(nz, 1, 0.5)
-)
-
-# 3) estimate AME
-res <- SpatialEffect(
-  ras = ras,
-  Zdata = Zdata,
-  x_coord_Z = "x",
-  y_coord_Z = "y",
-  treatment = "treat",
-  dVec = seq(0, 10, by = 1),
-  cType = "donut",
-  dist.metric = "Euclidean",
-  smooth = 1,
-  per.se = 1,
-  conley.se = 1,
-  nPerms = 500,
-  n_threads = 2L
-)
-
-summary(res, dVec.range = c(1, 5))
-plot(res, ci.type = "both")
-SpatialEffectTest(res, test.range = c(1, 5), smooth = 0)
-} # }
-```
+  Use a distance grid aligned with the raster resolution and report
+  sensitivity to reasonable grids.

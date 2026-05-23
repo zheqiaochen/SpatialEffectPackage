@@ -216,13 +216,13 @@ Also required depending on geometry:
 
 Main slots:
 
-- `AMR_est`: `data.frame` with columns:
+- `AME_est`: `data.frame` with columns:
   - `d`: distance value from `dVec`
   - `taud_est`: estimated AME at distance `d`
 - `Per.CI` (optional): numeric matrix `length(dVec) x 2` (`lower`, `upper`).
 - `Conley.SE` (optional): numeric vector `length(dVec)`.
 - `Conley.CI` (optional): numeric matrix `length(dVec) x 2`.
-- `AMR_est_smoothed` (optional): numeric matrix with columns `(d, tau_smoothed)`.
+- `AME_est_smoothed` (optional): numeric matrix with columns `(d, tau_smoothed)`.
 - `smoothed.Conley.SE` / `smoothed.Conley.CI` / `smoothed.Conley.CB` (optional).
 - `Parameters`: internal list used for downstream tests and methods.
 
@@ -230,9 +230,9 @@ Minimal output inspection:
 
 ```r
 names(result)
-# [1] "AMR_est" "Per.CI" "Conley.SE" "Conley.CI" "AMR_est_smoothed" ...
+# [1] "AME_est" "Per.CI" "Conley.SE" "Conley.CI" "AME_est_smoothed" ...
 
-head(result$AMR_est)
+head(result$AME_est)
 #     d   taud_est
 # 1 0.0  0.012
 # 2 1.0  0.019

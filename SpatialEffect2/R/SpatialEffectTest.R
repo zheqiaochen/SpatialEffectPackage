@@ -26,7 +26,8 @@ SpatialEffectTest <- function(result.list, test.range, smooth = 0, alpha = 0.05)
   clustvar <- params$clustvar
   nPerms <- params$nPerms
   n_threads <- if (!is.null(params$n_threads)) params$n_threads else 1L
-  AMR_est <- result.list[["AMR_est"]]
+  perm_engine <- if (!is.null(params$perm_engine)) params$perm_engine else "ri"
+  AME_est <- if (!is.null(result.list[["AME_est"]])) result.list[["AME_est"]] else result.list[["AMR_est"]]
   nz <- length(Zup)
 
   if (is.null(test.range)) {
@@ -42,27 +43,27 @@ SpatialEffectTest <- function(result.list, test.range, smooth = 0, alpha = 0.05)
   test.range[1] <- max(test.range[1], min(dVec))
   test.range[2] <- min(test.range[2], max(dVec))
 
-  in_range <- AMR_est$d >= test.range[1] & AMR_est$d <= test.range[2]
+  in_range <- AME_est$d >= test.range[1] & AME_est$d <= test.range[2]
 
   if (smooth == 1) {
-    AMR_est_smoothed <- result.list[["AMR_est_smoothed"]]
-    test.stat <- sum(AMR_est_smoothed[AMR_est_smoothed[, 1] >= test.range[1] &
-                                       AMR_est_smoothed[, 1] <= test.range[2], 2])
+    AME_est_smoothed <- if (!is.null(result.list[["AME_est_smoothed"]])) result.list[["AME_est_smoothed"]] else result.list[["AMR_est_smoothed"]]
+    test.stat <- sum(AME_est_smoothed[AME_est_smoothed[, 1] >= test.range[1] &
+                                       AME_est_smoothed[, 1] <= test.range[2], 2])
     Sdata$zIndex <- rep(seq_len(nz), length(dVec))
   } else {
-    test.stat <- sum(AMR_est$taud_est[in_range])
+    test.stat <- sum(AME_est$taud_est[in_range])
   }
 
   permMat <- .gen_perms(Zup, blockvar = blockvar, clustvar = clustvar,
-                         maxiter = nPerms)
+                         maxiter = nPerms, engine = perm_engine)
   test.per <- rep(NA_real_, nPerms)
 
   for (i in seq_len(ncol(permMat))) {
     if (smooth == 0) {
       z_perm <- permMat[, i]
-      AMR_per <- as.numeric(z_perm %*% Ybards / sum(z_perm) -
+      AME_per <- as.numeric(z_perm %*% Ybards / sum(z_perm) -
                              (1 - z_perm) %*% Ybards / sum(1 - z_perm))
-      test.per[i] <- sum(AMR_per[in_range])
+      test.per[i] <- sum(AME_per[in_range])
     } else {
       treatment_per <- data.frame(zIndex = seq_len(nz), treatment.per = permMat[, i])
       Sdata_per <- merge(Sdata, treatment_per, by = "zIndex")
@@ -70,13 +71,13 @@ SpatialEffectTest <- function(result.list, test.range, smooth = 0, alpha = 0.05)
       bw <- params$bw
       bw_debias <- params$bw_debias
       kernel <- "tri"  # default for smoothed test
-      AMR_per <- LocalReg(dVec, Sdata_per, bw, bw_debias, Zup, xevals = NULL,
+      AME_per <- LocalReg(dVec, Sdata_per, bw, bw_debias, Zup, xevals = NULL,
                            smooth.conley.se = 0, kernel = kernel, cutoff = 0,
                            dist.metric = "Euclidean",
                            bias_correction = !is.null(bw_debias),
                            n_threads = n_threads)$coefs[, 2]
-      test.per[i] <- sum(AMR_per[AMR_est_smoothed[, 1] >= test.range[1] &
-                                   AMR_est_smoothed[, 1] <= test.range[2]])
+      test.per[i] <- sum(AME_per[AME_est_smoothed[, 1] >= test.range[1] &
+                                   AME_est_smoothed[, 1] <= test.range[2]])
     }
   }
 

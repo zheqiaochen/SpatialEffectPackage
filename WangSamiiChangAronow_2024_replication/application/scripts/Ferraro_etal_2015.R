@@ -235,15 +235,25 @@ dev.off()
 
 
 # analysis
-result.list <- SpatialEffect(ras = ras, Zdata = Zdata, x_coord_Z = x_coord_Z, y_coord_Z = y_coord_Z, ras_Z = NULL, 
-                             treatment = treatment, dVec = dVec[-1], numpts = 10000, only.unique = only.unique, smooth = smooth, 
-                             per.se = per.se, conley.se = conley.se, cutoff = cutoff, alpha = alpha, edf = edf,
-                             nPerms = nPerms, smooth.conley.se = smooth.conley.se, dist.metric = dist.metric, cType = "edge", kernel = kernel)
-
 result.list <- SpatialEffect(ras = ras, Zdata = Zdata, x_coord_Z = x_coord_Z, y_coord_Z = y_coord_Z, ras_Z = ras_Z, 
-                             treatment = treatment, dVec = dVec, numpts = numpts, only.unique = only.unique, smooth = smooth, 
+                             treatment = treatment, dVec = dVec[-1], numpts = 10000, only.unique = only.unique, smooth = 0, 
+                             per.se = per.se, conley.se = conley.se, cutoff = cutoff, alpha = alpha, edf = edf,
+                             nPerms = nPerms, smooth.conley.se = 0, dist.metric = dist.metric, cType = "edge", kernel = kernel)
+
+result.list <- SpatialEffect::SpatialEffect(ras = ras, Zdata = Zdata, x_coord_Z = x_coord_Z, y_coord_Z = y_coord_Z, ras_Z = ras_Z, 
+                             treatment = treatment, dVec = dVec, numpts = numpts, only.unique = only.unique, smooth = 0, 
                              per.se = per.se, conley.se = conley.se, cutoff = cutoff, alpha = alpha, edf = edf, bw = NULL, bw_debias = NULL,
-                             nPerms = nPerms, smooth.conley.se = smooth.conley.se, dist.metric = dist.metric, cType = "donut", kernel = kernel)
+                             nPerms = nPerms, smooth.conley.se = 0, dist.metric = dist.metric, cType = "donut", kernel = kernel)
+
+
+# main result from SpatialEffect2
+library(SpatialEffect2)
+result2.list <- SpatialEffect2::SpatialEffect(ras = ras, Zdata = Zdata, x_coord_Z = x_coord_Z, y_coord_Z = y_coord_Z, ras_Z = ras_Z, 
+                             treatment = treatment, dVec = dVec, numpts = numpts, only.unique = only.unique, smooth = 0, 
+                             per.se = per.se, conley.se = conley.se, cutoff = cutoff, alpha = alpha, edf = edf, bw = NULL, bw_debias = NULL,
+                             nPerms = nPerms, smooth.conley.se = 0, dist.metric = dist.metric, cType = "donut", kernel = kernel)
+
+
 
 result.list <- SpatialEffect(ras = ras, Zdata = Zdata, ras_Z = ras_Z, alpha = alpha,
                              treatment = treatment, dVec = dVec, numpts = numpts, cutoff = cutoff, dist.metric = dist.metric, smooth = 1, kernel = kernel)
@@ -262,8 +272,11 @@ smoothed.Conley.CB <- result.list[["smoothed.Conley.CB"]]
 
 save(result.list, file = "../data/Ferraro_etal_2015.RData")
 
-test.result <- SpatialEffectTest(result.list, test.range = c(1000, 5000), smooth = 0)
-test.result <- SpatialEffectTest(result.list, test.range = c(1, 5), smooth = 0, alpha = 0.1)
+test.result <- SpatialEffect::SpatialEffectTest(result.list, test.range = c(1000, 5000), smooth = 0)
+test.result <- SpatialEffect::SpatialEffectTest(result.list, test.range = c(1000, 5000), smooth = 0, alpha = 0.1)
+
+# test result from SpatialEffect2
+test2.result <- SpatialEffect2::SpatialEffectTest(result2.list, test.range = c(1000, 5000), smooth = 0, alpha = 0.1)
 
 dVec_real <- dVec / 1000
 

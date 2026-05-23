@@ -7,12 +7,26 @@
 \method{summary}{SpatialEffect}(object, dVec.range = NULL, ...)
 }
 \arguments{
-\item{object}{A SpatialEffect object}
+\item{object}{A \code{"SpatialEffect"} object returned by
+\code{\link{SpatialEffect}}.}
 
-\item{dVec.range}{Optional 2-element vector to filter displayed distances}
+\item{dVec.range}{Optional numeric vector of length 2, \code{c(d_min, d_max)}.
+When supplied, only distances inside this closed interval are displayed.
+Use the same distance units as the original \code{dVec}.}
 
-\item{...}{Ignored}
+\item{...}{Additional arguments passed by the generic. Currently ignored.}
+}
+\value{
+The formatted summary table is printed. The printed matrix is returned
+  invisibly by the underlying print call.
 }
 \description{
-Summary method for SpatialEffect objects
+Summarizes a \code{"SpatialEffect"} object as a compact table. The columns are
+determined by the components available in the object: point estimates are
+always shown, while Conley intervals, permutation intervals, smoothed
+estimates, and smoothed intervals are shown only when they were computed.
+}
+\seealso{
+\code{\link{SpatialEffect}}, \code{\link{print.SpatialEffect}},
+  \code{\link{plot.SpatialEffect}}
 }

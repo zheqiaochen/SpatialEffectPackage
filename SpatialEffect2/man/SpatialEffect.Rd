@@ -40,7 +40,8 @@ SpatialEffect(
   m = 2,
   lambda = 0.02,
   nPerms = 1000,
-  n_threads = 1L
+  n_threads = 1L,
+  perm_engine = c("ri", "auto", "shuffle")
 )
 }
 \arguments{
@@ -118,15 +119,20 @@ IPW (observational studies).}
 \item{nPerms}{Number of permutations (default 1000).}
 
 \item{n_threads}{Number of threads for parallel C++ computation (default 1).}
+
+\item{perm_engine}{Permutation generator for randomization inference:
+\code{"ri"} (default, uses \code{ri::genperms()}),
+\code{"auto"} (use \code{ri} if installed, otherwise fallback to shuffle),
+or \code{"shuffle"} (simple label reshuffling; ignores block/cluster design).}
 }
 \value{
 An S3 object of class "SpatialEffect" containing:
 \describe{
-  \item{AMR_est}{Data frame of distance and AME estimates}
+  \item{AME_est}{Data frame of distance and AME estimates}
   \item{Per.CI}{Permutation confidence intervals (if per.se=1)}
   \item{Conley.SE}{Conley standard errors (if conley.se=1)}
   \item{Conley.CI}{Conley confidence intervals (if conley.se=1)}
-  \item{AMR_est_smoothed}{Smoothed estimates (if smooth=1)}
+  \item{AME_est_smoothed}{Smoothed estimates (if smooth=1)}
   \item{smoothed.Conley.SE}{Smoothed Conley SEs (if smooth=1 and smooth.conley.se=1)}
   \item{smoothed.Conley.CI}{Smoothed Conley CIs}
   \item{smoothed.Conley.CB}{Uniform confidence bands (if conf.band=1)}

@@ -7,13 +7,12 @@
 - [`SpatialEffectTest()`](SpatialEffectTest.md) : Sharp null
   randomization test for spatial treatment effects
 
-## Workflow Guide
+## Analysis Workflow
 
 - [`SpatialEffect2-workflow`](SpatialEffect2-workflow.md) :
-  SpatialEffect2 Workflow Guide: Detailed Inputs, Parameters, and
-  Practice
+  SpatialEffect2 Analysis Workflow
 
-## Methods
+## S3 Methods
 
 - [`print(`*`<SpatialEffect>`*`)`](print.SpatialEffect.md) : Print
   method for SpatialEffect objects

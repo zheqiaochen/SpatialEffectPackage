@@ -32,7 +32,16 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
+<li class="nav-item"><a class="nav-link" href="articles/what-does-spatialeffect2-do.html">What does SpatialEffect2 do?</a></li>
+<li class="nav-item"><a class="nav-link" href="reference/SpatialEffect2-workflow.html">Analysis Workflow</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-applications" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Applications</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-applications">
+<li><a class="dropdown-item" href="articles/applications.html">Jayachandran et al. (2017)</a></li>
+    <li><a class="dropdown-item" href="articles/ferraro-etal-2015.html">Ferraro et al. (2015)</a></li>
+  </ul>
+</li>
+<li class="nav-item"><a class="nav-link" href="reference/index.html">Function Reference</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -48,14 +57,16 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="spatialeffect2-tutorial">SpatialEffect2 Tutorial<a class="anchor" aria-label="anchor" href="#spatialeffect2-tutorial"></a>
 </h1></div>
-<p><code>SpatialEffect2</code> estimates distance-indexed <strong>Average Marginalized Effects (AME)</strong> for spatial interventions under unknown interference.</p>
-<p>This page is the main practical tutorial for the pkgdown site.</p>
+<p><code>SpatialEffect2</code> estimates distance-indexed <strong>Average Marginalized Effects (AME)</strong> for spatial interventions under unknown interference. This tutorial uses a small synthetic point-intervention example so the full workflow runs quickly: prepare an outcome raster, define intervention nodes, estimate the AME curve, add uncertainty, test a distance range, and plot the result.</p>
 <div class="section level2">
 <h2 id="id_1-setup">1. Setup<a class="anchor" aria-label="anchor" href="#id_1-setup"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">SpatialEffect2</span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/" class="external-link">terra</a></span><span class="op">)</span></span></code></pre></div>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/" class="external-link">terra</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/packageDescription.html" class="external-link">packageVersion</a></span><span class="op">(</span><span class="st">"SpatialEffect2"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] '0.2.0'</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="id_2-prepare-inputs">2. Prepare Inputs<a class="anchor" aria-label="anchor" href="#id_2-prepare-inputs"></a>
@@ -64,21 +75,46 @@
 <h3 id="outcome-surface-ras">Outcome surface (<code>ras</code>)<a class="anchor" aria-label="anchor" href="#outcome-surface-ras"></a>
 </h3>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
-<span><span class="va">ras</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span>nrows <span class="op">=</span> <span class="fl">60</span>, ncols <span class="op">=</span> <span class="fl">60</span>, xmin <span class="op">=</span> <span class="fl">0</span>, xmax <span class="op">=</span> <span class="fl">60</span>, ymin <span class="op">=</span> <span class="fl">0</span>, ymax <span class="op">=</span> <span class="fl">60</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">ras</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">ras</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">2026</span><span class="op">)</span></span>
+<span><span class="va">ras</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/terra/man/rast.html" class="external-link">rast</a></span><span class="op">(</span>nrows <span class="op">=</span> <span class="fl">40</span>, ncols <span class="op">=</span> <span class="fl">40</span>, xmin <span class="op">=</span> <span class="fl">0</span>, xmax <span class="op">=</span> <span class="fl">40</span>, ymin <span class="op">=</span> <span class="fl">0</span>, ymax <span class="op">=</span> <span class="fl">40</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">ras</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/dimensions.html" class="external-link">ncell</a></span><span class="op">(</span><span class="va">ras</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">ras</span></span>
+<span><span class="co">#&gt; class       : SpatRaster </span></span>
+<span><span class="co">#&gt; dimensions  : 40, 40, 1  (nrow, ncol, nlyr)</span></span>
+<span><span class="co">#&gt; resolution  : 1, 1  (x, y)</span></span>
+<span><span class="co">#&gt; extent      : 0, 40, 0, 40  (xmin, xmax, ymin, ymax)</span></span>
+<span><span class="co">#&gt; coord. ref. : lon/lat WGS 84 (CRS84) (OGC:CRS84) </span></span>
+<span><span class="co">#&gt; source(s)   : memory</span></span>
+<span><span class="co">#&gt; name        :     lyr.1 </span></span>
+<span><span class="co">#&gt; min value   : -3.048044 </span></span>
+<span><span class="co">#&gt; max value   :  3.416480</span></span></code></pre></div>
+<figure><img src="outcome-surface-ras.png" style="width:70.0%" alt="Example outcome surface (ras)"><figcaption aria-hidden="true">
+Example outcome surface (ras)
+</figcaption></figure>
 </div>
 <div class="section level3">
 <h3 id="point-interventions-zdata">Point interventions (<code>Zdata</code>)<a class="anchor" aria-label="anchor" href="#point-interventions-zdata"></a>
 </h3>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">nz</span> <span class="op">&lt;-</span> <span class="fl">100</span></span>
+<code class="sourceCode R"><span><span class="va">nz</span> <span class="op">&lt;-</span> <span class="fl">60</span></span>
 <span><span class="va">Zdata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">nz</span>, <span class="fl">2</span>, <span class="fl">58</span><span class="op">)</span>,</span>
-<span>  y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">nz</span>, <span class="fl">2</span>, <span class="fl">58</span><span class="op">)</span>,</span>
+<span>  x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">nz</span>, <span class="fl">2</span>, <span class="fl">38</span><span class="op">)</span>,</span>
+<span>  y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">nz</span>, <span class="fl">2</span>, <span class="fl">38</span><span class="op">)</span>,</span>
 <span>  treat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Binomial.html" class="external-link">rbinom</a></span><span class="op">(</span><span class="va">nz</span>, <span class="fl">1</span>, <span class="fl">0.5</span><span class="op">)</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>Required columns for point mode:</p>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="va">Zdata</span>, <span class="fl">6</span><span class="op">)</span></span>
+<span><span class="co">#&gt;           x        y treat</span></span>
+<span><span class="co">#&gt; 1  9.644531 11.46395     0</span></span>
+<span><span class="co">#&gt; 2 15.268587 10.50909     1</span></span>
+<span><span class="co">#&gt; 3 33.337356 12.96211     1</span></span>
+<span><span class="co">#&gt; 4 21.835087 21.33355     0</span></span>
+<span><span class="co">#&gt; 5 12.222365 36.60885     0</span></span>
+<span><span class="co">#&gt; 6 37.129211 37.89930     0</span></span></code></pre></div>
+<figure><img src="outcome-surface-with-nodes.png" style="width:70.0%" alt="Outcome surface with intervention nodes (red = treated, blue = control)"><figcaption aria-hidden="true">
+Outcome surface with intervention nodes (red = treated, blue = control)
+</figcaption></figure><p>Required columns for point mode:</p>
 <ul>
 <li>treatment column (<code>0/1</code>)</li>
 <li>x/y intervention coordinates</li>
@@ -89,22 +125,32 @@
 <div class="section level2">
 <h2 id="id_3-choose-distance-design">3. Choose Distance Design<a class="anchor" aria-label="anchor" href="#id_3-choose-distance-design"></a>
 </h2>
-<ul>
+<ol style="list-style-type: decimal">
 <li>
-<code>cType = "edge"</code>: boundary at distance <code>d</code>
-</li>
+<code>cType = "edge"</code>: boundary at distance <code>d</code> (Figure A below)</li>
+</ol>
+<figure><img src="distance-design-edge.png" style="width:62.0%" alt="Figure A: edge design"><figcaption aria-hidden="true">
+Figure A: edge design
+</figcaption></figure><ol start="2" style="list-style-type: decimal">
 <li>
-<code>cType = "disk"</code>: cumulative region <code>[0, d]</code>
-</li>
+<code>cType = "disk"</code>: cumulative region <code>[0, d]</code> (Figure B below)</li>
+</ol>
+<figure><img src="distance-design-disk.png" style="width:62.0%" alt="Figure B: disk design"><figcaption aria-hidden="true">
+Figure B: disk design
+</figcaption></figure><ol start="3" style="list-style-type: decimal">
 <li>
-<code>cType = "donut"</code>: adjacent-ring difference (often most interpretable)</li>
-</ul>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dVec</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">10</span>, by <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
+<code>cType = "donut"</code>: adjacent-ring difference (often most interpretable, Figure C below)</li>
+</ol>
+<figure><img src="distance-design-donut.png" style="width:62.0%" alt="Figure C: donut design"><figcaption aria-hidden="true">
+Figure C: donut design
+</figcaption></figure><div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dVec</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">5</span>, by <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="va">dVec</span></span>
+<span><span class="co">#&gt; [1] 0 1 2 3 4 5</span></span></code></pre></div>
 <p>Practical tip: under <code>donut</code>, choose <code>dVec</code> step size close to raster resolution to reduce empty-ring <code>NA</code> issues.</p>
 </div>
 <div class="section level2">
-<h2 id="id_4-estimate-ame-curve">4. Estimate AME Curve<a class="anchor" aria-label="anchor" href="#id_4-estimate-ame-curve"></a>
+<h2 id="id_4-estimate-ame-curve-with-uncertainty">4. Estimate AME Curve with Uncertainty<a class="anchor" aria-label="anchor" href="#id_4-estimate-ame-curve-with-uncertainty"></a>
 </h2>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/SpatialEffect.html">SpatialEffect</a></span><span class="op">(</span></span>
@@ -116,15 +162,34 @@
 <span>  dVec <span class="op">=</span> <span class="va">dVec</span>,</span>
 <span>  cType <span class="op">=</span> <span class="st">"donut"</span>,</span>
 <span>  dist.metric <span class="op">=</span> <span class="st">"Euclidean"</span>,</span>
-<span>  smooth <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  smooth <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  per.se <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  conley.se <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  kernel <span class="op">=</span> <span class="st">"uni"</span>,</span>
-<span>  cutoff <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  cutoff <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.05</span>,</span>
-<span>  nPerms <span class="op">=</span> <span class="fl">500</span>,</span>
-<span>  n_threads <span class="op">=</span> <span class="fl">2L</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span>  nPerms <span class="op">=</span> <span class="fl">200</span>,</span>
+<span>  perm_engine <span class="op">=</span> <span class="st">"shuffle"</span>,</span>
+<span>  n_threads <span class="op">=</span> <span class="fl">1L</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">ame_table</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  d <span class="op">=</span> <span class="va">result</span><span class="op">$</span><span class="va">AME_est</span><span class="op">$</span><span class="va">d</span>,</span>
+<span>  AME <span class="op">=</span> <span class="va">result</span><span class="op">$</span><span class="va">AME_est</span><span class="op">$</span><span class="va">taud_est</span>,</span>
+<span>  Conley_SE <span class="op">=</span> <span class="va">result</span><span class="op">$</span><span class="va">Conley.SE</span>,</span>
+<span>  Conley_lwr <span class="op">=</span> <span class="va">result</span><span class="op">$</span><span class="va">Conley.CI</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span>,</span>
+<span>  Conley_upr <span class="op">=</span> <span class="va">result</span><span class="op">$</span><span class="va">Conley.CI</span><span class="op">[</span>, <span class="fl">2</span><span class="op">]</span>,</span>
+<span>  Perm_lwr <span class="op">=</span> <span class="va">result</span><span class="op">$</span><span class="va">Per.CI</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span>,</span>
+<span>  Perm_upr <span class="op">=</span> <span class="va">result</span><span class="op">$</span><span class="va">Per.CI</span><span class="op">[</span>, <span class="fl">2</span><span class="op">]</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="va">ame_table</span>, <span class="fl">6</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   d         AME  Conley_SE  Conley_lwr Conley_upr   Perm_lwr   Perm_upr</span></span>
+<span><span class="co">#&gt; 1 0 -0.03750097 0.24392269 -0.51558065 0.44057872 -0.5100804 0.48739127</span></span>
+<span><span class="co">#&gt; 2 1 -0.04369783 0.12841707 -0.29539067 0.20799501 -0.2648224 0.20345510</span></span>
+<span><span class="co">#&gt; 3 2 -0.02479922 0.07645815 -0.17465443 0.12505600 -0.1505803 0.13944603</span></span>
+<span><span class="co">#&gt; 4 3 -0.03163822 0.04726418 -0.12427430 0.06099786 -0.1089905 0.09266432</span></span>
+<span><span class="co">#&gt; 5 4  0.01308657 0.05938572 -0.10330731 0.12948045 -0.1274640 0.09868982</span></span>
+<span><span class="co">#&gt; 6 5  0.02384883 0.05148026 -0.07705063 0.12474828 -0.1074437 0.07613412</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="id_5-understand-outputs">5. Understand Outputs<a class="anchor" aria-label="anchor" href="#id_5-understand-outputs"></a>
@@ -133,20 +198,31 @@
 <p>Common slots:</p>
 <ul>
 <li>
-<code>AMR_est</code>: data frame with <code>d</code>, <code>taud_est</code>
+<code>AME_est</code>: data frame with <code>d</code>, <code>taud_est</code>
 </li>
 <li>
-<code>Per.CI</code>: permutation CI matrix (<code>length(dVec) x 2</code>)</li>
+<code>Per.CI</code>: permutation CI matrix (<code>length(dVec) x 2</code>) when <code>per.se = 1</code>
+</li>
 <li>
-<code>Conley.SE</code>, <code>Conley.CI</code>: spatial HAC uncertainty</li>
+<code>Conley.SE</code>, <code>Conley.CI</code>: spatial HAC uncertainty when <code>conley.se = 1</code>
+</li>
 <li>
-<code>AMR_est_smoothed</code>: smoothed AME curve</li>
+<code>AME_est_smoothed</code>: smoothed AME curve when <code>smooth = 1</code>
+</li>
 <li>
 <code>Parameters</code>: stored intermediate objects/settings</li>
 </ul>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result</span>, dVec.range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">5</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span>, ci.type <span class="op">=</span> <span class="st">"both"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "AME_est"    "Per.CI"     "Conley.SE"  "Conley.CI"  "Parameters"</span></span>
+<span><span class="co">#&gt; [6] "call"</span></span>
+<span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result</span>, dVec.range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Call: SpatialEffect</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;      dVec AME_est Conley.CI.l Conley.CI.u Per.CI.l Per.CI.u</span></span>
+<span><span class="co">#&gt; [1,]    1  -0.044      -0.295       0.208   -0.265    0.203</span></span>
+<span><span class="co">#&gt; [2,]    2  -0.025      -0.175       0.125   -0.151    0.139</span></span>
+<span><span class="co">#&gt; [3,]    3  -0.032      -0.124       0.061   -0.109    0.093</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="id_6-test-policy-relevant-distance-ranges">6. Test Policy-Relevant Distance Ranges<a class="anchor" aria-label="anchor" href="#id_6-test-policy-relevant-distance-ranges"></a>
@@ -154,82 +230,47 @@
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">test</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/SpatialEffectTest.html">SpatialEffectTest</a></span><span class="op">(</span></span>
 <span>  result.list <span class="op">=</span> <span class="va">result</span>,</span>
-<span>  test.range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">5</span><span class="op">)</span>,</span>
+<span>  test.range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span>,</span>
 <span>  smooth <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.05</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">test</span></span></code></pre></div>
+<span><span class="va">test</span></span>
+<span><span class="co">#&gt; $test.stat</span></span>
+<span><span class="co">#&gt; [1] -0.1001353</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $test.CI</span></span>
+<span><span class="co">#&gt;       2.5%      97.5% </span></span>
+<span><span class="co">#&gt; -0.3809472  0.4064966</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="id_7-parameter-cheat-sheet">7. Parameter Cheat Sheet<a class="anchor" aria-label="anchor" href="#id_7-parameter-cheat-sheet"></a>
+<h2 id="id_7-plot-result-with-plot">7. Plot Result with <code>plot()</code>
+<a class="anchor" aria-label="anchor" href="#id_7-plot-result-with-plot"></a>
 </h2>
-<div class="section level3">
-<h3 id="required">Required<a class="anchor" aria-label="anchor" href="#required"></a>
-</h3>
-<ul>
-<li><code>Zdata</code></li>
-<li><code>treatment</code></li>
-<li><code>dVec</code></li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="geometry-and-outcomes">Geometry and outcomes<a class="anchor" aria-label="anchor" href="#geometry-and-outcomes"></a>
-</h3>
-<ul>
-<li>
-<code>ras</code> or (<code>Ydata</code>, <code>outcome</code>, <code>x_coord_Y</code>, <code>y_coord_Y</code>) for kriging mode</li>
-<li>
-<code>x_coord_Z</code>, <code>y_coord_Z</code> (point mode)</li>
-<li>
-<code>ras_Z</code> (polygon mode)</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="inference">Inference<a class="anchor" aria-label="anchor" href="#inference"></a>
-</h3>
-<ul>
-<li>
-<code>per.se</code>, <code>nPerms</code>
-</li>
-<li>
-<code>conley.se</code>, <code>kernel</code>, <code>cutoff</code>, <code>edf</code>
-</li>
-<li><code>alpha</code></li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="smoothing">Smoothing<a class="anchor" aria-label="anchor" href="#smoothing"></a>
-</h3>
-<ul>
-<li>
-<code>smooth</code>, <code>bw</code>, <code>bw_debias</code>, <code>bias_correction</code>
-</li>
-<li>
-<code>smooth.conley.se</code>, <code>conf.band</code>
-</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="computeperformance">Compute/performance<a class="anchor" aria-label="anchor" href="#computeperformance"></a>
-</h3>
-<ul>
-<li>
-<code>n_threads</code>, <code>numpts</code>, <code>evalpts</code>
-</li>
-</ul>
-</div>
+<p>Because <code>result</code> is a <code>"SpatialEffect"</code> object, <code>graphics::plot(result, ...)</code> dispatches to the package’s S3 method, <code><a href="reference/plot.SpatialEffect.html">plot.SpatialEffect()</a></code>.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">graphics</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span></span>
+<span>  <span class="va">result</span>,</span>
+<span>  smooth <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  ci.type <span class="op">=</span> <span class="st">"both"</span>,</span>
+<span>  style <span class="op">=</span> <span class="st">"lines"</span>,</span>
+<span>  main <span class="op">=</span> <span class="st">"Estimated AME by Distance"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/plot-result-s3-1.png" alt="AME curve with confidence intervals rendered by the SpatialEffect S3 plot method." width="72%"></p>
+<p>You can also switch to shaded confidence bands:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">graphics</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span></span>
+<span>  <span class="va">result</span>,</span>
+<span>  smooth <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  ci.type <span class="op">=</span> <span class="st">"both"</span>,</span>
+<span>  style <span class="op">=</span> <span class="st">"shade"</span>,</span>
+<span>  main <span class="op">=</span> <span class="st">"AME with Conley and Permutation CIs"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="id_8-recommended-practice">8. Recommended Practice<a class="anchor" aria-label="anchor" href="#id_8-recommended-practice"></a>
+<h2 id="id_8-next-step">8. Next Step<a class="anchor" aria-label="anchor" href="#id_8-next-step"></a>
 </h2>
-<ol style="list-style-type: decimal">
-<li>Verify CRS consistency and spatial overlap before estimation.</li>
-<li>Start with unsmoothed baseline (<code>smooth = 0</code>) and both uncertainty engines.</li>
-<li>Add smoothing only after baseline AME is stable.</li>
-<li>Test policy ranges with <code><a href="reference/SpatialEffectTest.html">SpatialEffectTest()</a></code>.</li>
-<li>Run sensitivity checks over <code>dVec</code>, <code>cType</code>, <code>kernel</code>, and <code>cutoff</code>.</li>
-</ol>
+<p>This tutorial shows the mechanics of a complete run. For guidance on choosing <code>cType</code>, <code>dVec</code>, uncertainty options, and diagnostics, see the <a href="reference/SpatialEffect2-workflow.html">Analysis Workflow</a>.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="license">
@@ -253,9 +294,6 @@
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
 <li>Ye Wang <br><small class="roles"> Author, maintainer </small>   </li>
-<li>Cyrus Samii <br><small class="roles"> Author </small>   </li>
-<li>Haoge Chang <br><small class="roles"> Author </small>   </li>
-<li>P. M. Aronow <br><small class="roles"> Author </small>   </li>
 </ul>
 </div>
 
@@ -266,7 +304,7 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Ye Wang, Cyrus Samii, Haoge Chang, P. M. Aronow.</p>
+  <p>Developed by Ye Wang.</p>
 </div>
 
 <div class="pkgdown-footer-right">
