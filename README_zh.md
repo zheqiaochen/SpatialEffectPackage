@@ -13,6 +13,7 @@ interference）的设置。
 在包根目录生成站点：
 
 ``` r
+
 pkgdown::build_site()
 ```
 
@@ -25,6 +26,7 @@ pkgdown::build_site()
 本地源码安装：
 
 ``` r
+
 install.packages("/path/to/SpatialEffect2", repos = NULL, type = "source")
 ```
 
@@ -41,18 +43,21 @@ R CMD INSTALL SpatialEffect2
 核心估计函数：
 
 ``` r
+
 SpatialEffect(...)
 ```
 
 距离区间检验：
 
 ``` r
+
 SpatialEffectTest(result.list, test.range, smooth = 0, alpha = 0.05)
 ```
 
 S3 方法：
 
 ``` r
+
 summary(result, dVec.range = c(1, 5))
 plot(result, smooth = TRUE, ci.type = "both")
 ```
@@ -64,6 +69,7 @@ plot(result, smooth = TRUE, ci.type = "both")
 ### 1）点干预（`ras_Z = NULL`）
 
 ``` r
+
 Zdata <- data.frame(
   id = 1:6,
   x = c(10, 15, 23, 30, 41, 44),
@@ -83,6 +89,7 @@ y_coord_Z = "y"
 ### 2）多边形干预（`ras_Z` 为 `sf`）
 
 ``` r
+
 result <- SpatialEffect(
   ras = ras,
   ras_Z = intervention_sf,
@@ -98,6 +105,7 @@ result <- SpatialEffect(
 ### 3）无栅格时的 kriging 模式（`ras = NULL`）
 
 ``` r
+
 Ydata <- data.frame(
   x = runif(200, 0, 100),
   y = runif(200, 0, 100),
@@ -179,11 +187,11 @@ y_coord_Y = "y"
 
 `SpatialEffect(...)` 返回 `"SpatialEffect"` 对象，常见元素：
 
-- `AMR_est`：`data.frame`，列为 `d`, `taud_est`
+- `AME_est`：`data.frame`，列为 `d`, `taud_est`
 - `Per.CI`：`length(dVec) x 2`
 - `Conley.SE`：长度为 `length(dVec)` 的向量
 - `Conley.CI`：`length(dVec) x 2`
-- `AMR_est_smoothed`：平滑结果（`d`, `tau_smoothed`）
+- `AME_est_smoothed`：平滑结果（`d`, `tau_smoothed`）
 - `smoothed.Conley.CI` / `smoothed.Conley.CB`
 - `Parameters`：内部参数与中间量
 

@@ -43,7 +43,8 @@ SpatialEffect(
   m = 2,
   lambda = 0.02,
   nPerms = 1000,
-  n_threads = 1L
+  n_threads = 1L,
+  perm_engine = c("ri", "auto", "shuffle")
 )
 ```
 
@@ -193,11 +194,18 @@ SpatialEffect(
 
   Number of threads for parallel C++ computation (default 1).
 
+- perm_engine:
+
+  Permutation generator for randomization inference: `"ri"` (default,
+  uses [`ri::genperms()`](https://rdrr.io/pkg/ri/man/genperms.html)),
+  `"auto"` (use `ri` if installed, otherwise fallback to shuffle), or
+  `"shuffle"` (simple label reshuffling; ignores block/cluster design).
+
 ## Value
 
 An S3 object of class "SpatialEffect" containing:
 
-- AMR_est:
+- AME_est:
 
   Data frame of distance and AME estimates
 
@@ -213,7 +221,7 @@ An S3 object of class "SpatialEffect" containing:
 
   Conley confidence intervals (if conley.se=1)
 
-- AMR_est_smoothed:
+- AME_est_smoothed:
 
   Smoothed estimates (if smooth=1)
 
