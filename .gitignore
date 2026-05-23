@@ -22,7 +22,3 @@ symbols.rds
 
 # RStudio
 .Rproj.user/
-
-# Rcpp::compileAttributes()
-RcppExports.R
-RcppExports.cpp
