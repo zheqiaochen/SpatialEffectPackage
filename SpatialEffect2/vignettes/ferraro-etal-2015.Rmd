@@ -35,14 +35,21 @@ prepare_ferraro_inputs <- function(protected_areas, forest,
                                    coarse_res = 5000,
                                    fine_res = 2000,
                                    max_distance = 20000) {
-  crs_wkt <- sf::st_crs(protected_areas)$wkt
+  crs_pa <- sf::st_crs(protected_areas)
+  # Use proj4string for terra::rast(); the shapefile WKT contains Latin-1
+  # characters that break tolower() under UTF-8 locales (e.g. Linux CI).
+  crs_arg <- crs_pa$proj4string
+  if (is.na(crs_arg) || !nzchar(crs_arg)) {
+    crs_arg <- paste0("EPSG:", crs_pa$epsg)
+  }
+
   pa_buffers <- sf::st_buffer(protected_areas, dist = buffer_distance)
 
   bbox <- sf::st_bbox(pa_buffers)
   blank_rast <- terra::rast(
     terra::ext(bbox["xmin"], bbox["xmax"], bbox["ymin"], bbox["ymax"]),
     res = coarse_res,
-    crs = crs_wkt
+    crs = crs_arg
   )
 
   pa_rast <- terra::rasterize(
@@ -79,7 +86,7 @@ prepare_ferraro_inputs <- function(protected_areas, forest,
       analysis_bbox["ymin"], analysis_bbox["ymax"]
     ),
     res = fine_res,
-    crs = crs_wkt
+    crs = crs_arg
   )
 
   ras <- terra::rasterize(
